@@ -1,0 +1,24 @@
+# Dependencies and build outputs
+node_modules/
+.pnpm-store/
+.pnpm-cache/
+target/
+dist/
+.vite/
+.tools/
+*.tsbuildinfo
+
+# Local configuration and logs
+*.log
+.env
+.env.*
+!.env.example
+
+# Editors and operating systems
+/.idea/
+/.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~

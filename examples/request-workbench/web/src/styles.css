@@ -1,0 +1,4 @@
+@import 'tailwindcss/theme.css' layer(theme);
+@import '@codex-proxy/ui/tailwind.css';
+/* 基础重置和组件样式由 UI 包提供，这里只生成示例页面使用的工具类。 */
+@import 'tailwindcss/utilities.css' layer(utilities) source('./');
