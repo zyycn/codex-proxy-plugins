@@ -12,11 +12,17 @@ case "$plugin_target" in
   x86_64-unknown-linux-gnu|aarch64-unknown-linux-gnu|aarch64-apple-darwin) ;;
   *) echo "不支持的插件目标平台：$plugin_target" >&2; exit 1 ;;
 esac
-pnpm build
-cargo build --release --locked --target "$plugin_target" --manifest-path examples/request-workbench/Cargo.toml
-"$plugin_cli" package \
-  --manifest examples/request-workbench/plugin.json \
-  --binary "examples/request-workbench/target/$plugin_target/release/codex-proxy-plugin-request-workbench" \
-  --target "$plugin_target" \
-  --resource-map web=web/dist \
-  --output-dir dist
+package_example() {
+  local example="$1"
+  local binary="$2"
+  pnpm --dir "examples/$example/frontend" build
+  cargo build --release --locked --target "$plugin_target" --manifest-path "examples/$example/backend/Cargo.toml"
+  "$plugin_cli" package \
+    --manifest "examples/$example/plugin.json" \
+    --binary "examples/$example/backend/target/$plugin_target/release/$binary" \
+    --target "$plugin_target" \
+    --resource-map web=frontend/dist \
+    --output-dir dist
+}
+
+package_example workbench codex-proxy-plugin-workbench

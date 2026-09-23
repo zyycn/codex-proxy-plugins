@@ -1,7 +1,0 @@
-packages:
-  - 'examples/*/web'
-
-autoInstallPeers: false
-
-overrides:
-  '@codex-proxy/ui': link:../codex-proxy-ui

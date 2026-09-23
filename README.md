@@ -1,56 +1,70 @@
-# Codex Proxy Plugins
+# Codex Proxy 插件示例
 
-Codex Proxy 的官方维护插件示例。插件源码和发版节奏独立于宿主；SDK、打包器由宿主仓库维护，UI 组件由 `codex-proxy-ui` 维护，均不复制到本仓库。
+面向插件作者的官方示例仓库。插件独立于宿主发布，通过公开 SDK 和宿主桥接入，不复制宿主业务模块。
 
-当前示例为 [Request Workbench](examples/request-workbench/README.md)，演示请求中间件、管理接口和继承宿主主题的 Vue 页面。它是教学示例，不是默认内置插件，安装后仍需配置范围和显式授权。
+[插件工作台](examples/workbench/README.md) 提供基础能力体验、接入指南，以及摘要、翻译、改写组成的文本处理示例。
+
+## 目录
+
+```text
+examples/workbench/
+├── plugin.json        插件清单
+├── backend/           Rust 工程与后端测试
+├── frontend/          Vue 工程、独立依赖及前端工具配置
+└── README.md          功能与开发说明
+
+scripts/package        构建与打包入口
+dist/                  安装包与校验文件，不入库
+```
+
+仓库根目录不维护 Node 工程。每个示例的前后端分别管理依赖，具体目录和职责见示例说明。
 
 ## 本地开发
 
-本地开发使用以下同级目录。UI 通过已配置的 pnpm override 链接源码，SDK 使用 Cargo 路径依赖；
-相关依赖尚未公开发布，当前不能只检出本仓库后从公网完成独立安装。
+工具链：Node.js 24、pnpm 11.7、Rust 1.97
 
-```text
-Codes/
-├── codex-proxy-rs/       # 公开 SDK 和打包工具
-├── codex-proxy-ui/       # UI 源码与组件文档
-└── codex-proxy-plugins/  # 本仓库
-```
-
-工具链为 Node.js 24、pnpm 11.7、Rust 1.97。在 UI 仓库先运行 `pnpm install --frozen-lockfile && pnpm build`，然后在本仓库运行：
+仅需检出本仓库。SDK 固定到 `7cf3a5d84d8b528bf848f5e8303eece1e4bf6bad`，UI 使用 GitHub Release `v0.1.0` 的安装包；两者均由锁文件固定，不依赖本机同级目录。在仓库根目录执行：
 
 ```bash
-pnpm install --frozen-lockfile
-pnpm lint
-pnpm build
-cargo test --locked --manifest-path examples/request-workbench/Cargo.toml
+pnpm --dir examples/workbench/frontend install --frozen-lockfile
+pnpm --dir examples/workbench/frontend dev
 ```
 
-同时修改 UI 时，可在 UI 仓库运行 `pnpm dev` 使用原生 Vite 热更新预览；集成到插件发布包前运行 `pnpm build` 并重新构建示例页面。安装到宿主的插件包含自己的 JS/CSS，不依赖开发机路径。
+验证入口：
+
+```bash
+pnpm --dir examples/workbench/frontend lint
+pnpm --dir examples/workbench/frontend build
+RUST_MIN_STACK=16777216 cargo test --locked --manifest-path examples/workbench/backend/Cargo.toml
+```
+
+Vite 独立预览与宿主安装是两种环境。已安装插件使用包内 JS/CSS，修改源码后需重新构建、打包并切换版本。
 
 ## 打包
 
-打包器由宿主仓库维护，可以安装到本仓库已忽略的 `.tools` 目录：
+安装宿主提供的打包工具，再运行脚本：
 
 ```bash
-cargo install --locked --path ../codex-proxy-rs/backend/apps/plugin-cli --root .tools
-PLUGIN_CLI="$PWD/.tools/bin/cpr-plugin" pnpm package
+cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev 7cf3a5d84d8b528bf848f5e8303eece1e4bf6bad codex-proxy-plugin-cli --root .tools
+PLUGIN_CLI="$PWD/.tools/bin/cpr-plugin" bash scripts/package
 ```
 
-默认构建本机目标，也可以 `pnpm package aarch64-unknown-linux-gnu`。交叉构建需自行安装对应 Rust target 和链接工具，或在对应平台构建。支持 Linux x86_64、Linux aarch64、macOS aarch64。
+默认构建本机平台，也可传入目标平台：`bash scripts/package aarch64-unknown-linux-gnu`。支持 Linux x86_64、Linux aarch64、macOS aarch64，交叉构建需准备对应 Rust target 和链接工具。
 
-产物进入根目录 `dist/`，包括完整插件 ID、版本、平台命名的 `.tar.gz` 与 `.sha256`。上传这个包即可安装，勿上传源码 zip、UI npm 包或仅有页面资源的目录。插件版本、宿主兼容范围和能力声明以示例的 `plugin.json` 为准。
+产物进入根目录 `dist/`，包括 `.tar.gz` 安装包和 `.sha256`。打包不代表安装、启用或实际能力验证成功。
 
 ## 依赖与发行
 
-UI npm 包与插件安装包独立发版，宿主发行物不构建或附带本仓库示例。
-对外发布前，须将 UI 的本地 override 换成已发布版本、SDK 的路径依赖换成包含所需接口的固定 Git 提交，
-并生成对应锁文件；不要依赖浮动 `main` 或开发机路径。
+SDK、打包器和 UI 组件库各自维护版本。更新依赖时使用发布包或固定 Git 提交，重新生成并提交锁文件，不使用浮动分支或开发机路径。
 
-宿主文档按所用 SDK 版本查阅，以下宿主路径相对于 `codex-proxy-rs` 仓库根目录：
+更新插件清单版本和 `release/notes.md`，从 `main` 推送对应的 `v<插件版本>` 标签。发布工作流在质量检查通过后构建 Linux x86_64、Linux aarch64 和 macOS aarch64 安装包，并附 `.sha256` 校验文件。
 
-| 文档 | 用途 |
+当前 SDK 与插件接口处于实验阶段，插件发布标记为 Pre-release。插件工作台要求支持清单 v3、协议 v4 的宿主，版本范围为 `>=3.14.0, <4.0.0`，不能安装到不支持插件能力的 `3.13.1` 正式宿主。
+
+宿主文档按所用 SDK 版本查阅：
+
+| 宿主仓库路径 | 内容 |
 | --- | --- |
-| SDK：`backend/crates/gateway-plugin/sdk/README.md` | 清单、图标、会话与能力合同 |
-| Plugin CLI：`backend/apps/plugin-cli/README.md` | 打包参数与平台要求 |
-| [Request Workbench](examples/request-workbench/README.md) | 可运行示例、配置与验证 |
-| 插件使用：`docs/plugins.md` | 安装、授权、使用与版本管理 |
+| `backend/crates/gateway-plugin/sdk/README.md` | 清单、会话与能力合同 |
+| `backend/apps/plugin-cli/README.md` | 打包参数与平台要求 |
+| `docs/plugins.md` | 安装、权限、使用与版本管理 |

@@ -1,0 +1,118 @@
+{
+  "manifestVersion": 3,
+  "name": "capability-workbench",
+  "displayName": "插件工作台",
+  "publisher": "codex-proxy",
+  "version": "0.1.11",
+  "description": "通过本地回显和文本处理，体验请求、账号与管理扩展",
+  "license": "Apache-2.0",
+  "author": "Codex Proxy 贡献者",
+  "engines": {
+    "codex-proxy-rs": ">=3.14.0, <4.0.0"
+  },
+  "main": "bin/plugin",
+  "runtime": "trustedProcess",
+  "contributes": {
+    "provider": {
+      "capabilities": [
+        "models",
+        "authentication",
+        "quota",
+        "request_profile",
+        "account_management",
+        "billing",
+        "maintenance"
+      ],
+      "inputFormats": ["openai"],
+      "outputFormats": ["canonical", "openai"]
+    },
+    "middleware": {
+      "stages": ["request", "attempt"],
+      "inputFormats": ["openai"],
+      "outputFormats": ["openai"]
+    },
+    "model_router": {},
+    "scheduler": {},
+    "request_lifecycle": {},
+    "usage": {},
+    "web_socket_observer": {},
+    "frontend_authentication": {},
+    "management": {},
+    "command_line": {}
+  },
+  "permissions": [
+    "network",
+    "models",
+    "accounts",
+    "requests",
+    "public_endpoints"
+  ],
+  "configurationSchema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "resources": {
+    "web/index.html": "text/html",
+    "web/app.js": "text/javascript",
+    "web/app.css": "text/css"
+  },
+  "state": [
+    {
+      "namespace": "workbench",
+      "schemaVersion": 1,
+      "schema": {
+        "type": "object",
+        "required": ["selectedId", "entries"],
+        "properties": {
+          "selectedId": {
+            "type": ["string", "null"],
+            "maxLength": 128
+          },
+          "entries": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "title",
+                "sourceKind",
+                "source",
+                "sourceUrl",
+                "task",
+                "instruction",
+                "result",
+                "modelId",
+                "clientKeyId",
+                "updatedAt"
+              ],
+              "properties": {
+                "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+                "title": { "type": "string", "maxLength": 256 },
+                "sourceKind": { "enum": ["text", "url"] },
+                "source": { "type": "string", "maxLength": 262144 },
+                "sourceUrl": {
+                  "type": ["string", "null"],
+                  "maxLength": 4096
+                },
+                "task": { "enum": ["summarize", "translate", "rewrite"] },
+                "instruction": { "type": "string", "maxLength": 4096 },
+                "result": { "type": "string", "maxLength": 262144 },
+                "modelId": { "type": "string", "maxLength": 256 },
+                "clientKeyId": { "type": "string", "maxLength": 256 },
+                "updatedAt": { "type": "integer", "minimum": 0 }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "maximumRecords": 1,
+      "maximumBytes": 262144,
+      "maximumValueBytes": 262144,
+      "migratesFrom": []
+    }
+  ]
+}

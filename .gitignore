@@ -1,4 +1,4 @@
-# Dependencies and build outputs
+# 依赖与构建产物
 node_modules/
 .pnpm-store/
 .pnpm-cache/
@@ -8,13 +8,13 @@ dist/
 .tools/
 *.tsbuildinfo
 
-# Local configuration and logs
+# 本地配置与日志
 *.log
 .env
 .env.*
 !.env.example
 
-# Editors and operating systems
+# 编辑器与系统文件
 /.idea/
 /.vscode/
 .DS_Store
