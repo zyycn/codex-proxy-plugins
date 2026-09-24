@@ -3,7 +3,7 @@
   "name": "capability-workbench",
   "displayName": "插件工作台",
   "publisher": "codex-proxy",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "通过请求处理与文本工作流，体验内置模型和管理扩展",
   "license": "Apache-2.0",
   "author": "Codex Proxy 贡献者",
