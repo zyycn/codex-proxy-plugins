@@ -54,8 +54,8 @@ function recordEvidence(
     outcome: 'passed',
     occurredAtMs: Date.now(),
     requestId,
-    provider: model ? 'demo' : null,
-    accountId: model ? 'demo-alpha' : null,
+    provider: model ? 'openai' : null,
+    accountId: model ? 'preview-account' : null,
     model,
     details: {},
   }
@@ -79,7 +79,6 @@ function snapshot() {
   }
   return {
     contractVersion: 1,
-    provider: { id: 'demo', models: ['demo-echo', 'demo-auto'] },
     keys: [
       { id: 'preview-key-primary', name: '预览 Key', enabled: true },
       { id: 'preview-key-disabled', name: '已停用 Key', enabled: false },
@@ -110,17 +109,7 @@ async function managementRequest(input: Parameters<PluginHost['request']>[0]) {
   }
   if (input.method === 'POST' && input.path === 'api/models') {
     recordEvidence('models', 'host.models.list')
-    return json({ models: ['gpt-preview', 'demo-auto', 'demo-echo'] })
-  }
-  if (input.method === 'POST' && input.path === 'api/demo-accounts/prepare') {
-    recordEvidence('authentication', 'host.auth.save')
-    recordEvidence('account_management', 'provider.account.get')
-    return json({
-      accounts: [
-        { id: 'demo-alpha', name: 'Alpha', created: true },
-        { id: 'demo-bravo', name: 'Bravo', created: false },
-      ],
-    })
+    return json({ models: ['gpt-preview'] })
   }
   if (input.method === 'POST' && input.path === 'api/fetch-text') {
     if (typeof body.url !== 'string' || !body.url.trim())
@@ -170,11 +159,7 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
 async function modelResponse(input: Parameters<PluginHost['models']['responses']>[0]): Promise<Response> {
   await delay(140, input.signal)
   const model = typeof input.body.model === 'string' ? input.body.model : 'gpt-preview'
-  const rawInput = input.body.input
-  const echoInput = typeof rawInput === 'string' ? rawInput : '能力工作台 Echo'
-  const output = model === 'demo-echo'
-    ? echoInput
-    : '这份预览结果提炼了原文的主要结论，并保留了关键事实与上下文。\n\n实际安装后，内容会由所选 Key 和模型通过普通 Responses 请求实时生成。'
+  const output = '这份预览结果提炼了原文的主要结论，并保留了关键事实与上下文。\n\n实际安装后，内容会由所选 Key 和模型通过普通 Responses 请求实时生成。'
   const chunks = output.match(/.{1,12}/gs) ?? [output]
   const requestId = `preview-request-${++sequence}`
   let index = 0
@@ -189,7 +174,7 @@ async function modelResponse(input: Parameters<PluginHost['models']['responses']
           return
         }
 
-        for (const capability of ['models', 'executor', 'billing', 'middleware', 'model_router', 'scheduler', 'request_lifecycle', 'usage'])
+        for (const capability of ['middleware', 'model_router', 'scheduler', 'request_lifecycle', 'usage'])
           recordEvidence(capability, `preview.${capability}`, requestId, model)
 
         const completed = {
@@ -214,7 +199,7 @@ async function modelResponse(input: Parameters<PluginHost['models']['responses']
     status: 200,
     headers: {
       'content-type': 'text/event-stream',
-      'x-request-id': requestId,
+      'x-gateway-request-id': requestId,
     },
   })
 }

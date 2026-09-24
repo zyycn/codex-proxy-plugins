@@ -1,10 +1,9 @@
 use gateway_plugin_sdk::{
     ErrorCode, PluginFault,
     call::host::{
-        AffinityLookupRequest, AffinityLookupResult, AuthListRequest, AuthListResult,
-        AuthSaveRequest, AuthSaveResult, HttpRequest, HttpResponse, KeyListRequest, KeyListResult,
-        LogRequest, LogResult, ModelListRequest, ModelListResult, StateGetRequest, StateGetResult,
-        StatePutRequest, StatePutResult, StreamClose, StreamRead,
+        AffinityLookupRequest, AffinityLookupResult, HttpRequest, HttpResponse, KeyListRequest,
+        KeyListResult, LogRequest, LogResult, ModelListRequest, ModelListResult, StateGetRequest,
+        StateGetResult, StatePutRequest, StatePutResult, StreamClose, StreamRead,
     },
     client::{HostClient, SessionError},
 };
@@ -42,31 +41,6 @@ pub(crate) async fn list_models(
     )
     .await
     .map(|(result, _)| result)
-}
-
-pub(crate) async fn list_accounts(
-    host: &HostClient,
-    provider_id: Option<String>,
-    cursor: Option<String>,
-    limit: u16,
-) -> Result<AuthListResult, PluginFault> {
-    payload(
-        host,
-        "host.auth.list",
-        &AuthListRequest {
-            provider_id,
-            cursor,
-            limit,
-        },
-    )
-    .await
-}
-
-pub(crate) async fn save_account(
-    host: &HostClient,
-    request: &AuthSaveRequest,
-) -> Result<AuthSaveResult, PluginFault> {
-    payload(host, "host.auth.save", request).await
 }
 
 pub(crate) async fn get_state(
@@ -168,29 +142,6 @@ pub(crate) async fn close_http(host: &HostClient, stream: String) -> Result<(), 
         return Err(invalid_callback());
     }
     Ok(())
-}
-
-async fn payload<I, O>(host: &HostClient, method: &str, input: &I) -> Result<O, PluginFault>
-where
-    I: Serialize,
-    O: DeserializeOwned,
-{
-    let reply = host
-        .call(
-            method,
-            serde_json::json!({}),
-            serde_json::to_vec(input).map_err(|_| invalid_callback())?,
-        )
-        .await
-        .map_err(SessionError::into_plugin_fault)?;
-    if !reply
-        .result
-        .as_object()
-        .is_some_and(serde_json::Map::is_empty)
-    {
-        return Err(invalid_callback());
-    }
-    serde_json::from_slice(&reply.payload).map_err(|_| invalid_callback())
 }
 
 async fn metadata<I, O>(

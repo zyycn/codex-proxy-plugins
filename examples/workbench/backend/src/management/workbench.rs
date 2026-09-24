@@ -3,11 +3,8 @@ use super::{
     response::{api_error, host_error, json_reply},
     validation::{decode_json, require_json},
 };
+use crate::evidence::{EvidenceInput, EvidenceSnapshot, ExampleStatus};
 use crate::{evidence::EvidenceLog, host_calls};
-use crate::{
-    evidence::{EvidenceInput, EvidenceSnapshot, ExampleStatus},
-    provider::{AUTO_MODEL, ECHO_MODEL, PROVIDER_ID},
-};
 use gateway_plugin_sdk::call::host::{LogLevel, LogRequest};
 use gateway_plugin_sdk::{
     PluginFault,
@@ -24,17 +21,10 @@ const MAXIMUM_ECHO_BYTES: usize = 4 * 1024;
 #[serde(rename_all = "camelCase")]
 struct SnapshotResponse {
     contract_version: u32,
-    provider: ProviderSummary,
     keys: Vec<gateway_plugin_sdk::call::host::ClientKey>,
     keys_next_cursor: Option<String>,
     examples: Vec<ExampleStatus>,
     facts: EvidenceSnapshot,
-}
-
-#[derive(Serialize)]
-struct ProviderSummary {
-    id: &'static str,
-    models: &'static [&'static str],
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -55,10 +45,6 @@ pub(super) async fn snapshot(
             200,
             &SnapshotResponse {
                 contract_version: 1,
-                provider: ProviderSummary {
-                    id: PROVIDER_ID,
-                    models: &[ECHO_MODEL, AUTO_MODEL],
-                },
                 keys: keys.keys,
                 keys_next_cursor: keys.next_cursor,
                 examples: evidence.examples(),

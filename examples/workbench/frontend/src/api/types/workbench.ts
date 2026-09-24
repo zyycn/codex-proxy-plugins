@@ -33,10 +33,6 @@ export interface WorkbenchExample {
 
 export interface WorkbenchSnapshot {
   contractVersion: 1
-  provider: {
-    id: 'demo'
-    models: string[]
-  }
   keys: WorkbenchKey[]
   keysNextCursor: string | null
   examples: WorkbenchExample[]
@@ -77,10 +73,4 @@ export interface FetchTextReply {
   text: string
   truncated: boolean
   bytes: number
-}
-
-export interface PreparedAccount {
-  id: string
-  name: string
-  created: boolean
 }

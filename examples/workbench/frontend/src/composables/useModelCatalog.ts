@@ -4,7 +4,6 @@ import type { WorkbenchSnapshot } from '../api'
 import type { UiSelectOption } from '../types'
 import { computed, readonly, shallowRef, watch } from 'vue'
 import { listModels } from '../api'
-import { realModelIds } from '../utils/workbench'
 
 export function useModelCatalog(snapshot: Ref<WorkbenchSnapshot | undefined>) {
   const clientKeyId = shallowRef('')
@@ -39,7 +38,7 @@ export function useModelCatalog(snapshot: Ref<WorkbenchSnapshot | undefined>) {
       return
     }
     try {
-      const next = realModelIds(await listModels(key), snapshot.value?.provider.models ?? [])
+      const next = await listModels(key)
       if (!active)
         return
       models.value = next

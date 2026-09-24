@@ -1,4 +1,3 @@
-export * from './modules/accounts'
 export * from './modules/echo'
 export * from './modules/log'
 export * from './modules/models'

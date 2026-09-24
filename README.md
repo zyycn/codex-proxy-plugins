@@ -23,7 +23,7 @@ dist/                  安装包与校验文件，不入库
 
 工具链：Node.js 24、pnpm 11.7、Rust 1.97
 
-仅需检出本仓库。SDK 固定到 `7cf3a5d84d8b528bf848f5e8303eece1e4bf6bad`，UI 使用 GitHub Release `v0.1.0` 的安装包；两者均由锁文件固定，不依赖本机同级目录。在仓库根目录执行：
+仅需检出本仓库。SDK 固定到 `687ebd0331846e155e0268cba390ccdbe6aaa887`，UI 使用 GitHub Release `v0.1.0` 的安装包；两者均由锁文件固定，不依赖本机同级目录。在仓库根目录执行：
 
 ```bash
 pnpm --dir examples/workbench/frontend install --frozen-lockfile
@@ -45,7 +45,7 @@ Vite 独立预览与宿主安装是两种环境。已安装插件使用包内 JS
 安装宿主提供的打包工具，再运行脚本：
 
 ```bash
-cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev 7cf3a5d84d8b528bf848f5e8303eece1e4bf6bad codex-proxy-plugin-cli --root .tools
+cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev 687ebd0331846e155e0268cba390ccdbe6aaa887 codex-proxy-plugin-cli --root .tools
 PLUGIN_CLI="$PWD/.tools/bin/cpr-plugin" bash scripts/package
 ```
 

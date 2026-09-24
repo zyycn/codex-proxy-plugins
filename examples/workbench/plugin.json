@@ -4,7 +4,7 @@
   "displayName": "插件工作台",
   "publisher": "codex-proxy",
   "version": "0.1.11",
-  "description": "通过本地回显和文本处理，体验请求、账号与管理扩展",
+  "description": "通过请求处理与文本工作流，体验内置模型和管理扩展",
   "license": "Apache-2.0",
   "author": "Codex Proxy 贡献者",
   "engines": {
@@ -13,23 +13,17 @@
   "main": "bin/plugin",
   "runtime": "trustedProcess",
   "contributes": {
-    "provider": {
-      "capabilities": [
-        "models",
-        "authentication",
-        "quota",
-        "request_profile",
-        "account_management",
-        "billing",
-        "maintenance"
-      ],
-      "inputFormats": ["openai"],
-      "outputFormats": ["canonical", "openai"]
-    },
     "middleware": {
-      "stages": ["request", "attempt"],
-      "inputFormats": ["openai"],
-      "outputFormats": ["openai"]
+      "stages": [
+        "request",
+        "attempt"
+      ],
+      "inputFormats": [
+        "openai"
+      ],
+      "outputFormats": [
+        "openai"
+      ]
     },
     "model_router": {},
     "scheduler": {},
@@ -43,7 +37,6 @@
   "permissions": [
     "network",
     "models",
-    "accounts",
     "requests",
     "public_endpoints"
   ],
@@ -63,10 +56,16 @@
       "schemaVersion": 1,
       "schema": {
         "type": "object",
-        "required": ["selectedId", "entries"],
+        "required": [
+          "selectedId",
+          "entries"
+        ],
         "properties": {
           "selectedId": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 128
           },
           "entries": {
@@ -88,20 +87,59 @@
                 "updatedAt"
               ],
               "properties": {
-                "id": { "type": "string", "minLength": 1, "maxLength": 128 },
-                "title": { "type": "string", "maxLength": 256 },
-                "sourceKind": { "enum": ["text", "url"] },
-                "source": { "type": "string", "maxLength": 262144 },
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "title": {
+                  "type": "string",
+                  "maxLength": 256
+                },
+                "sourceKind": {
+                  "enum": [
+                    "text",
+                    "url"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "maxLength": 262144
+                },
                 "sourceUrl": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "maxLength": 4096
                 },
-                "task": { "enum": ["summarize", "translate", "rewrite"] },
-                "instruction": { "type": "string", "maxLength": 4096 },
-                "result": { "type": "string", "maxLength": 262144 },
-                "modelId": { "type": "string", "maxLength": 256 },
-                "clientKeyId": { "type": "string", "maxLength": 256 },
-                "updatedAt": { "type": "integer", "minimum": 0 }
+                "task": {
+                  "enum": [
+                    "summarize",
+                    "translate",
+                    "rewrite"
+                  ]
+                },
+                "instruction": {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                "result": {
+                  "type": "string",
+                  "maxLength": 262144
+                },
+                "modelId": {
+                  "type": "string",
+                  "maxLength": 256
+                },
+                "clientKeyId": {
+                  "type": "string",
+                  "maxLength": 256
+                },
+                "updatedAt": {
+                  "type": "integer",
+                  "minimum": 0
+                }
               },
               "additionalProperties": false
             }

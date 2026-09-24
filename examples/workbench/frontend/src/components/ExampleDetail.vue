@@ -11,18 +11,22 @@ const props = defineProps<{
   example: ExampleGuide
   evidence: Evidence[]
   keyOptions: UiSelectOption[]
+  modelOptions: UiSelectOption[]
+  modelsLoading: boolean
+  modelsError: string
   run?: ExampleRun
   busy: boolean
 }>()
 const emit = defineEmits<{ run: [], stop: [] }>()
 defineSlots<{ actions?: () => unknown }>()
-const demoKeyId = defineModel<string>('demoKeyId', { required: true })
+const clientKeyId = defineModel<string>('clientKeyId', { required: true })
+const modelId = defineModel<string>('modelId', { required: true })
 const message = defineModel<string>('message', { required: true })
 const running = computed(() => props.run?.phase === 'running')
 const usesModel = computed(() => ['uppercase', 'request'].includes(props.example.action))
 const commandMarkdown = computed(() => props.example.command ? `\`\`\`sh\n${props.example.command}\n\`\`\`` : '')
 const disabled = computed(() => props.busy
-  || (usesModel.value && !demoKeyId.value)
+  || (usesModel.value && (!clientKeyId.value || !modelId.value || props.modelsLoading))
   || (props.example.group === 'interactive' && !message.value.trim()))
 </script>
 
@@ -43,12 +47,16 @@ const disabled = computed(() => props.busy
     </header>
 
     <template v-if="example.group === 'interactive'">
-      <div class="grid items-end gap-3 sm:grid-cols-[minmax(10rem,16rem)_1fr_auto]">
+      <div class="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(8rem,12rem)_minmax(8rem,12rem)_1fr_auto]">
         <div v-if="usesModel" class="grid gap-2 text-cp-sm text-cp-text-secondary">
           客户端 Key
-          <BaseSelect v-model="demoKeyId" :options="keyOptions" :disabled="busy" placeholder="请选择可用 Key" aria-label="示例客户端 Key" />
+          <BaseSelect v-model="clientKeyId" :options="keyOptions" :disabled="busy" placeholder="请选择可用 Key" aria-label="示例客户端 Key" />
         </div>
-        <div class="grid gap-2 text-cp-sm text-cp-text-secondary" :class="usesModel ? '' : 'sm:col-span-2'">
+        <div v-if="usesModel" class="grid gap-2 text-cp-sm text-cp-text-secondary">
+          模型
+          <BaseSelect v-model="modelId" :options="modelOptions" :disabled="busy || modelsLoading" :placeholder="modelsLoading ? '正在加载模型' : '请选择模型'" aria-label="示例模型" />
+        </div>
+        <div class="grid gap-2 text-cp-sm text-cp-text-secondary" :class="usesModel ? '' : 'xl:col-span-3'">
           {{ example.action === 'uppercase' ? '转换前的文字' : '发送内容' }}
           <BaseInput v-model="message" :disabled="busy" maxlength="4096" aria-label="示例输入文本" @keydown.enter.prevent="!disabled && emit('run')" />
         </div>
@@ -61,8 +69,11 @@ const disabled = computed(() => props.busy
           {{ example.actionLabel }}
         </BaseButton>
       </div>
+      <p v-if="usesModel && modelsError" class="m-0 text-cp-sm text-cp-error-text" role="alert">
+        {{ modelsError }}
+      </p>
       <p v-if="usesModel" class="m-0 text-cp-xs text-cp-text-tertiary">
-        在本地运行，会复用或创建两个演示账号，并经过所选 Key 的计量，不调用外部模型
+        使用所选 Key 和模型执行真实请求，会产生相应的用量与费用
       </p>
       <p v-if="usesModel" class="m-0 text-cp-xs text-cp-text-secondary">
         先在插件管理的当前配置 → 生效请求中开启{{ example.action === 'uppercase' ? '“请求中间件 · 请求开始”' : '模型路由、账号调度与请求观察' }}，并将所选 Key 纳入生效范围。
@@ -77,11 +88,6 @@ const disabled = computed(() => props.busy
         </li>
       </ol>
       <BaseMarkdown v-if="commandMarkdown" :source="commandMarkdown" />
-      <div v-if="example.action === 'accounts'" class="flex">
-        <BaseButton variant="primary" :loading="running" :disabled="busy && !running" @click="emit('run')">
-          {{ example.actionLabel }}
-        </BaseButton>
-      </div>
       <p class="m-0 text-cp-sm text-cp-text-secondary">
         {{ example.expected }}
       </p>

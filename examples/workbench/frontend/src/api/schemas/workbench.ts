@@ -44,16 +44,14 @@ function parseExample(value: unknown): WorkbenchExample {
 
 export function parseSnapshot(input: unknown): WorkbenchSnapshot {
   const value = record(input, '工作台快照')
-  const provider = record(value.provider, '演示 Provider')
   const facts = record(value.facts, '执行事实')
   const latest = record(facts.latest, '最新执行事实')
-  if (value.contractVersion !== 1 || provider.id !== 'demo')
+  if (value.contractVersion !== 1)
     throw new Error('工作台合同版本不受支持')
   if (!Array.isArray(value.keys) || !Array.isArray(value.examples) || !Array.isArray(facts.entries))
     throw new Error('工作台快照格式无效')
   return {
     contractVersion: 1,
-    provider: { id: 'demo', models: stringArray(provider.models, '演示模型') },
     keys: value.keys.map(parseKey),
     keysNextCursor: nullableString(value.keysNextCursor, 'Key 游标'),
     examples: value.examples.map(parseExample),

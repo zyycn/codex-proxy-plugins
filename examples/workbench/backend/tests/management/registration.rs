@@ -15,7 +15,7 @@ async fn registration_exposes_all_routes_and_only_css_is_public() {
         )
         .await;
     let registration: Value = serde_json::from_slice(&frame.payload).unwrap();
-    assert_eq!(registration["routes"].as_array().unwrap().len(), 8);
+    assert_eq!(registration["routes"].as_array().unwrap().len(), 7);
     let public: Vec<_> = registration["resources"]
         .as_array()
         .unwrap()

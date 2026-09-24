@@ -7,11 +7,7 @@ import { requestMilestones } from '../constants/examples'
 
 const props = defineProps<{ example: ExampleGuide, run?: ExampleRun, evidence: Evidence[] }>()
 const running = computed(() => props.run?.phase === 'running')
-const account = computed(() => {
-  const event = props.evidence.find(item => item.capability === 'executor' && item.accountId)
-    ?? props.evidence.find(item => item.capability === 'scheduler' && item.accountId)
-  return props.run?.accounts.find(item => item.id === event?.accountId)?.name ?? event?.accountId
-})
+const account = computed(() => props.evidence.find(item => item.capability === 'scheduler' && item.accountId)?.accountId)
 const milestones = computed(() => requestMilestones.filter(item => props.evidence.some(event => event.event === item.event)))
 const status = computed(() => {
   if (!props.run)
@@ -42,19 +38,12 @@ const status = computed(() => {
           </p>
         </div>
         <div class="min-w-0 rounded-cp bg-cp-bg-container p-3">
-          <span class="text-cp-xs text-cp-text-tertiary">{{ example.action === 'uppercase' ? '转换后' : '插件返回' }}</span>
+          <span class="text-cp-xs text-cp-text-tertiary">{{ example.action === 'echo' ? '插件返回' : '模型回复' }}</span>
           <p class="mb-0 mt-2 whitespace-pre-wrap break-words font-mono text-cp-sm">
             {{ run.output }}
           </p>
         </div>
       </div>
-      <ul v-else class="m-0 grid gap-2 pl-0 text-cp-sm">
-        <li v-for="item in run.accounts" :key="item.id" class="flex flex-wrap items-center gap-3">
-          <span class="font-emphasis">{{ item.name }}</span>
-          <span class="text-cp-xs text-cp-text-tertiary">{{ item.created ? '已创建' : '复用已有账号' }}</span>
-          <code class="break-all text-cp-xs text-cp-text-tertiary">{{ item.id }}</code>
-        </li>
-      </ul>
     </template>
     <p v-else-if="!run?.error" class="m-0 text-cp-sm leading-relaxed text-cp-text-secondary">
       {{ running ? '正在等待插件返回…' : example.expected }}
@@ -66,7 +55,7 @@ const status = computed(() => {
           <dt class="text-cp-xs text-cp-text-tertiary">
             请求模型
           </dt><dd class="m-0 mt-1 font-mono text-cp-sm">
-            demo-auto
+            {{ run.requestedModel }}
           </dd>
         </div>
         <div>

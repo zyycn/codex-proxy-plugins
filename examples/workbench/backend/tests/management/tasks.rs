@@ -10,7 +10,7 @@ async fn task_history_preserves_multiline_text() {
         "id":"multiline","title":"多段文本","sourceKind":"text",
         "source":"第一段\r\n\r\n\t第二段","sourceUrl":null,
         "task":"summarize","instruction":"保留段落\n使用中文",
-        "result":"# 摘要\n\n- 第一项\n- 第二项","modelId":"demo-echo",
+        "result":"# 摘要\n\n- 第一项\n- 第二项","modelId":"test-model",
         "clientKeyId":"test-key","updatedAt":1,
     });
     let data = json!({"expectedVersion":null,"value":{"selectedId":"multiline","entries":[task]}});
@@ -32,7 +32,7 @@ async fn task_history_preserves_multiline_text() {
         ("source", "正文\0".to_owned()),
         ("result", "结果\u{1b}".to_owned()),
         ("instruction", "中".repeat(1_366)),
-        ("modelId", "demo-echo\n".to_owned()),
+        ("modelId", "test-model\n".to_owned()),
     ] {
         let mut invalid = data.clone();
         invalid["value"]["entries"][0][field] = json!(value);
@@ -48,7 +48,7 @@ async fn task_history_checks_selection_unique_ids_and_write_version() {
     let mut peer = Peer::start().await;
     let task = json!({
         "id":"one","title":"示例","sourceKind":"text","source":"输入","sourceUrl":null,
-        "task":"summarize","instruction":"","result":"输出","modelId":"demo-echo",
+        "task":"summarize","instruction":"","result":"输出","modelId":"test-model",
         "clientKeyId":"test-key","updatedAt":1,
     });
     for value in [

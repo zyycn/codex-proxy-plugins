@@ -7,7 +7,6 @@ mod evidence;
 mod host_calls;
 mod management;
 mod manifest;
-mod provider;
 mod request;
 
 pub use app::plugin;

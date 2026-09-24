@@ -1,5 +1,5 @@
+use super::scope::ScopeTracker;
 use crate::evidence::{EvidenceInput, EvidenceLog};
-use crate::provider::PROVIDER_ID;
 use gateway_plugin_sdk::{
     PluginFault,
     call::policy::{AccountScheduleDecision, AccountScheduleRequest},
@@ -10,12 +10,13 @@ use std::cmp::Reverse;
 
 pub(crate) async fn schedule_account(
     evidence: &EvidenceLog,
+    scope: &ScopeTracker,
     call: TypedCall<AccountScheduleRequest>,
 ) -> Result<TypedReply<AccountScheduleDecision>, PluginFault> {
-    let (decision, selected) = schedule_decision(&call.request);
-    if call.request.provider != PROVIDER_ID {
-        return Ok(TypedReply::new(decision));
+    if !scope.contains(&call.request.request_id) {
+        return Ok(TypedReply::new(AccountScheduleDecision::Delegate));
     }
+    let (decision, selected) = schedule_decision(&call.request);
     let mut item = EvidenceInput::passed("scheduler", "account_ordered");
     item.request_id = Some(&call.request.request_id);
     item.provider = Some(&call.request.provider);
@@ -32,9 +33,6 @@ pub(crate) async fn schedule_account(
 fn schedule_decision(
     request: &AccountScheduleRequest,
 ) -> (AccountScheduleDecision, Option<String>) {
-    if request.provider != PROVIDER_ID {
-        return (AccountScheduleDecision::Delegate, None);
-    }
     let selected = request
         .candidates
         .iter()

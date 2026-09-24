@@ -21,7 +21,6 @@ pub(crate) fn registration() -> ManagementRegistration {
             get("api/snapshot"),
             post("api/echo"),
             post("api/models"),
-            post("api/demo-accounts/prepare"),
             get("api/tasks"),
             post("api/tasks"),
             post("api/fetch-text"),

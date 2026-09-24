@@ -9,7 +9,6 @@ use super::scope::{ScopeTracker, body_has_scope_marker};
 use crate::{
     evidence::{EvidenceInput, EvidenceLog, EvidenceOutcome},
     host_calls,
-    provider::{AUTO_MODEL, ECHO_MODEL, PROVIDER_ID},
 };
 use serde_json::{Value, json};
 const RESPONSE_HEADER: &str = "x-cpr-capability-workbench";
@@ -25,14 +24,9 @@ pub(crate) async fn middleware(
     {
         scope.mark(request_id);
     }
-    let scoped = call.request.head.provider.as_deref() == Some(PROVIDER_ID)
-        || matches!(
-            call.request.head.model.as_deref(),
-            Some(ECHO_MODEL | AUTO_MODEL)
-        )
-        || request_id
-            .as_deref()
-            .is_some_and(|request_id| scope.contains(request_id));
+    let scoped = request_id
+        .as_deref()
+        .is_some_and(|request_id| scope.contains(request_id));
     if !scoped {
         return call.next.run(call.request).await;
     }

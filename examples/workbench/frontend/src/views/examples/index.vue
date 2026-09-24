@@ -28,11 +28,15 @@ const runner = useExampleRunner(toRef(props, 'snapshot'), props.refresh)
       />
       <ExampleDetail
         v-if="runner.selected.value"
-        v-model:demo-key-id="runner.keyId.value"
+        v-model:client-key-id="runner.catalog.clientKeyId.value"
+        v-model:model-id="runner.catalog.modelId.value"
         v-model:message="runner.message.value"
         :example="runner.selected.value"
         :evidence="runner.evidence.value"
-        :key-options="runner.keyOptions.value"
+        :key-options="runner.catalog.keyOptions.value"
+        :model-options="runner.catalog.modelOptions.value"
+        :models-loading="runner.catalog.loading.value"
+        :models-error="runner.catalog.error.value"
         :run="runner.run.value"
         :busy="Boolean(runner.activeId.value)"
         @run="runner.execute"

@@ -77,30 +77,6 @@ const EXAMPLES: &[ExampleDefinition] = &[
         trigger: "打开页面，或调用文本回显接口",
     },
     ExampleDefinition {
-        id: "local-model",
-        title: "本地回显模型",
-        capabilities: &["models", "executor"],
-        trigger: "向 demo-echo 发送 Responses 请求",
-    },
-    ExampleDefinition {
-        id: "demo-accounts",
-        title: "演示账号",
-        capabilities: &["authentication", "account_management"],
-        trigger: "准备两个演示账号，再使用宿主的账号管理操作",
-    },
-    ExampleDefinition {
-        id: "quota-and-billing",
-        title: "额度与计费",
-        capabilities: &["quota", "billing"],
-        trigger: "查询演示额度，并完成一次回显请求",
-    },
-    ExampleDefinition {
-        id: "profiles-and-maintenance",
-        title: "画像与维护",
-        capabilities: &["request_profile", "maintenance"],
-        trigger: "选择演示画像，等待宿主维护任务执行",
-    },
-    ExampleDefinition {
         id: "request-processing",
         title: "请求加工",
         capabilities: &["middleware"],
@@ -110,13 +86,13 @@ const EXAMPLES: &[ExampleDefinition] = &[
         id: "routing-and-scheduling",
         title: "模型路由与账号调度",
         capabilities: &["model_router", "scheduler"],
-        trigger: "准备两个演示账号后，请求 demo-auto 模型",
+        trigger: "选择可用模型发送带工作台标记的请求",
     },
     ExampleDefinition {
         id: "request-observation",
         title: "请求观察",
         capabilities: &["request_lifecycle", "usage", "web_socket_observer"],
-        trigger: "完成一次回显请求，并单独发送真实 WebSocket 请求",
+        trigger: "完成一次模型请求，并单独发送真实 WebSocket 请求",
     },
     ExampleDefinition {
         id: "command-line",

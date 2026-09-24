@@ -38,11 +38,11 @@ async fn models_and_log_forward_only_their_declared_host_calls() {
             |method, params, _| {
                 assert_eq!(method, "host.models.list");
                 assert_eq!(params["client_key_id"], "test-key");
-                Ok((json!({"models":["demo-echo"]}), Vec::new()))
+                Ok((json!({"models":["test-model"]}), Vec::new()))
             },
         )
         .await;
-    assert_eq!((status, body), (200, json!({"models":["demo-echo"]})));
+    assert_eq!((status, body), (200, json!({"models":["test-model"]})));
     let (status, body) = peer
         .api("POST", "api/log", Some(json!({})), |method, params, _| {
             assert_eq!(method, "host.log");

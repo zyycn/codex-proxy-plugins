@@ -1,6 +1,5 @@
 use super::scope::ScopeTracker;
 use crate::evidence::{EvidenceInput, EvidenceLog};
-use crate::provider::PROVIDER_ID;
 use gateway_plugin_sdk::{
     PluginFault,
     call::{observation::ObserveWebSocketResponse, policy::ObserveRequest},
@@ -14,7 +13,7 @@ pub(crate) async fn observe_request(
     call: TypedCall<ObserveRequest>,
 ) -> Result<TypedReply<Empty>, PluginFault> {
     let marked = scope.take(&call.request.request_id);
-    if call.request.provider.as_deref() != Some(PROVIDER_ID) && !marked {
+    if !marked {
         return Ok(TypedReply::new(Empty {}));
     }
     let mut details = Map::new();
@@ -51,7 +50,7 @@ pub(crate) async fn observe_websocket(
     scope: &ScopeTracker,
     call: TypedCall<ObserveWebSocketResponse>,
 ) -> Result<TypedReply<Empty>, PluginFault> {
-    if call.request.provider != PROVIDER_ID && !scope.contains(&call.request.request_id) {
+    if !scope.contains(&call.request.request_id) {
         return Ok(TypedReply::new(Empty {}));
     }
     let mut item = EvidenceInput::passed("web_socket_observer", "response_event_observed");

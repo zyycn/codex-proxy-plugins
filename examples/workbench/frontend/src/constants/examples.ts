@@ -1,11 +1,9 @@
 import type { ExampleGuide } from '../types'
-import { CaseUpper, Fingerprint, PanelsTopLeft, Route, Terminal, UsersRound } from '@lucide/vue'
+import { CaseUpper, Fingerprint, PanelsTopLeft, Route, Terminal } from '@lucide/vue'
 
 export const requestMilestones = [
   { event: 'route_decided', label: '选择模型' },
   { event: 'account_ordered', label: '选择账号' },
-  { event: 'execution_completed', label: '模型执行完成' },
-  { event: 'billable_usage_emitted', label: '提交计量事件' },
   { event: 'request_observed', label: '收到请求终态' },
 ]
 
@@ -13,24 +11,24 @@ export const exampleGuides: ExampleGuide[] = [
   {
     id: 'text-transform',
     title: '转换成大写',
-    summary: '插件先把英文转成大写，再交给本地模型原样返回，你可以直接对照处理前后的文字',
+    summary: '插件先把输入文字转成大写，再交给所选模型，调用记录展示中间件是否执行',
     icon: CaseUpper,
     group: 'interactive',
     action: 'uppercase',
     actionLabel: '转换文本',
     capabilities: ['middleware'],
-    expected: '试试 Hello, plugin!，返回的文字应为 HELLO, PLUGIN!',
+    expected: '模型收到大写后的输入；返回内容由模型生成，可在调用记录中核对 uppercased',
   },
   {
     id: 'request-pipeline',
     title: '追踪一次请求',
-    summary: '请求 demo-auto，由插件选择实际模型和执行账号，随后流式返回原文并记录用量',
+    summary: '使用所选模型，由插件从宿主候选中选择平台和账号，观察流式响应与最终用量',
     icon: Route,
     group: 'interactive',
     action: 'request',
     actionLabel: '发送请求',
-    capabilities: ['models', 'executor', 'model_router', 'scheduler', 'billing', 'request_lifecycle', 'usage', 'web_socket_observer'],
-    expected: '运行后查看实际模型、执行账号和 Token 用量，Echo 模型只回显文字，不回答问题',
+    capabilities: ['model_router', 'scheduler', 'request_lifecycle', 'usage', 'web_socket_observer'],
+    expected: '运行后查看模型、执行账号、Token 用量与插件收到的调用记录',
   },
   {
     id: 'plugin-api',
@@ -42,23 +40,6 @@ export const exampleGuides: ExampleGuide[] = [
     actionLabel: '发送文本',
     capabilities: ['management'],
     expected: '例如发送“你好，插件”，接口会返回同样的文字',
-  },
-  {
-    id: 'demo-accounts',
-    title: '演示账号',
-    summary: '准备两个本地账号，随后在账号管理中体验插件提供的登录、额度、资料和请求画像',
-    icon: UsersRound,
-    group: 'integration',
-    action: 'accounts',
-    actionLabel: '准备演示账号',
-    capabilities: ['authentication', 'account_management', 'quota', 'request_profile', 'maintenance'],
-    expected: 'Alpha、Bravo 是本插件的固定测试身份，不含第三方凭据，也不访问外部服务',
-    steps: [
-      '点击“准备演示账号”，创建或复用 Alpha 和 Bravo',
-      '打开主站“账号管理”，筛选 Demo 平台，查看两个账号',
-      '查看账号资料、刷新额度，或在编辑中选择 standard / concise 请求画像',
-      '账号登录通过主站新增账号入口体验，后台资料刷新由宿主维护任务触发',
-    ],
   },
   {
     id: 'terminal-command',
@@ -90,8 +71,8 @@ export const exampleGuides: ExampleGuide[] = [
     steps: [
       '仅在独立测试环境启用本插件的客户端认证',
       '把外部身份 capability-workbench-demo-user 映射到一个可用的测试 Key',
-      '准备演示账号后，使用下方命令请求 demo-echo，将地址替换为网关地址',
+      '选择该 Key 可访问的内置平台模型，替换下方模型和网关地址',
     ],
-    command: `curl <网关地址>/v1/responses \\\n  -H 'Authorization: CapabilityWorkbench demo' \\\n  -H 'Content-Type: application/json' \\\n  -d '{"model":"demo-echo","input":"Hello, plugin!"}'`,
+    command: `curl <网关地址>/v1/responses \\\n  -H 'Authorization: CapabilityWorkbench demo' \\\n  -H 'Content-Type: application/json' \\\n  -d '{"model":"<可用模型>","input":"Hello, plugin!"}'`,
   },
 ]

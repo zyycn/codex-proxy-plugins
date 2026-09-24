@@ -1,11 +1,6 @@
 import type { SavedTask, TaskKind } from '../api'
 import { defaultInstructions, taskLabels } from '../constants/workbench'
 
-export function realModelIds(models: string[], demoModels: string[]): string[] {
-  const demos = new Set(demoModels)
-  return models.filter(model => !demos.has(model))
-}
-
 export function instructionFor(task: TaskKind, custom: string): string {
   return custom.trim() || defaultInstructions[task]
 }

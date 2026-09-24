@@ -1,4 +1,4 @@
-use super::{accounts, models, response::api_error, tasks, text, workbench};
+use super::{models, response::api_error, tasks, text, workbench};
 use crate::evidence::{EvidenceInput, EvidenceLog};
 use gateway_plugin_sdk::{
     PluginFault,
@@ -30,7 +30,6 @@ pub(crate) async fn handle(
         ("GET", "api/snapshot") => workbench::snapshot(&evidence, call).await,
         ("POST", "api/echo") => workbench::echo(&evidence, call).await,
         ("POST", "api/models") => models::list(&evidence, call).await,
-        ("POST", "api/demo-accounts/prepare") => accounts::prepare(&evidence, call).await,
         ("GET", "api/tasks") => tasks::get(&evidence, call).await,
         ("POST", "api/tasks") => tasks::save(&evidence, call).await,
         ("POST", "api/fetch-text") => text::fetch(&evidence, call).await,

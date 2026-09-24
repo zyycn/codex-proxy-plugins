@@ -1,5 +1,5 @@
 import type { Component, Ref } from 'vue'
-import type { Evidence, PreparedAccount, WorkbenchSnapshot } from '../api'
+import type { Evidence, WorkbenchSnapshot } from '../api'
 
 export type WorkbenchView = 'text' | 'examples'
 
@@ -28,7 +28,7 @@ export interface UiSegmentedOption {
   disabled?: boolean
 }
 
-export type ExampleAction = 'echo' | 'uppercase' | 'request' | 'accounts' | 'external'
+export type ExampleAction = 'echo' | 'uppercase' | 'request' | 'external'
 
 export interface ExampleGuide {
   id: string
@@ -49,7 +49,7 @@ export interface ExampleRun {
   input: string
   output: string
   error: string
-  accounts: PreparedAccount[]
+  requestedModel: string | null
   requestId: string | null
   model: string | null
   inputTokens: number | null

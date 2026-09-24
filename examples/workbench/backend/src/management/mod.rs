@@ -1,4 +1,3 @@
-mod accounts;
 mod models;
 mod registration;
 mod response;

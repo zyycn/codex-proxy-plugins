@@ -106,7 +106,7 @@ impl Peer {
             payload,
         })
         .await;
-        if matches!(method, "middleware.handle" | "provider.execute") {
+        if method == "middleware.handle" {
             self.send(Frame::control(Message::Credit {
                 id,
                 bytes: 1024 * 1024,
@@ -174,6 +174,19 @@ impl Peer {
             result["status"].as_u64().unwrap(),
             serde_json::from_slice(&frame.payload).unwrap(),
         )
+    }
+
+    pub async fn mark_request(&mut self) {
+        let frame = self.call(
+            "policy.route_model",
+            Stage::Routing,
+            json!({"request_id":"test-request","operation":"generate","protocol":"openai","model":"test-model","available_providers":["openai"]}),
+            serde_json::to_vec(&json!({"metadata":{"capability_workbench":"true"}})).unwrap(),
+        ).await;
+        assert_eq!(
+            result(&frame),
+            &json!({"decision":"route","provider":"openai"})
+        );
     }
 
     pub async fn snapshot(&mut self) -> Value {

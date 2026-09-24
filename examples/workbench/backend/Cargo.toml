@@ -12,7 +12,7 @@ name = "workbench"
 path = "tests/main.rs"
 
 [dependencies]
-gateway-plugin-sdk = { git = "https://github.com/zyycn/codex-proxy-rs.git", rev = "7cf3a5d84d8b528bf848f5e8303eece1e4bf6bad", features = ["io"] }
+gateway-plugin-sdk = { git = "https://github.com/zyycn/codex-proxy-rs.git", rev = "687ebd0331846e155e0268cba390ccdbe6aaa887", features = ["io"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
 tokio = { version = "1.52.3", default-features = false, features = ["io-std", "macros", "rt", "sync", "time"] }

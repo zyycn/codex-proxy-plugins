@@ -2,14 +2,15 @@
 import type { Ref } from 'vue'
 import type { WorkbenchSnapshot } from '../api'
 import type { ExampleRun } from '../types'
-import { computed, onBeforeUnmount, shallowRef, watch } from 'vue'
-import { echo, listModels, modelResponses, prepareDemoAccounts } from '../api'
+import { computed, onBeforeUnmount, shallowRef } from 'vue'
+import { echo, modelResponses } from '../api'
 import { exampleGuides } from '../constants/examples'
 import { consumeModelResponse } from '../utils/responses'
+import { useModelCatalog } from './useModelCatalog'
 
 export function useExampleRunner(snapshot: Ref<WorkbenchSnapshot | undefined>, refresh: () => Promise<void>) {
   const selectedId = shallowRef('text-transform')
-  const keyId = shallowRef('')
+  const catalog = useModelCatalog(snapshot)
   const inputs = shallowRef<Record<string, string>>({})
   const runs = shallowRef<Record<string, ExampleRun>>({})
   const activeId = shallowRef('')
@@ -26,11 +27,6 @@ export function useExampleRunner(snapshot: Ref<WorkbenchSnapshot | undefined>, r
     get: () => inputs.value[selectedId.value] ?? (selected.value?.action === 'echo' ? '你好，插件' : 'Hello, plugin!'),
     set: (value: string) => { inputs.value = { ...inputs.value, [selectedId.value]: value } },
   })
-  const keyOptions = computed(() => (snapshot.value?.keys ?? []).map(key => ({
-    label: key.name,
-    value: key.id,
-    disabled: !key.enabled,
-  })))
   const evidence = computed(() => {
     const current = run.value
     const capabilities = selected.value?.capabilities ?? []
@@ -44,12 +40,6 @@ export function useExampleRunner(snapshot: Ref<WorkbenchSnapshot | undefined>, r
       && (current.requestId ? item.requestId === current.requestId : item.occurredAtMs >= current.startedAtMs))
   })
 
-  watch(() => snapshot.value?.keys, (keys) => {
-    const enabled = keys?.filter(key => key.enabled) ?? []
-    if (!enabled.some(key => key.id === keyId.value))
-      keyId.value = enabled[0]?.id ?? ''
-  }, { immediate: true })
-
   function update(id: string, patch: Partial<ExampleRun>): void {
     if (!disposed && runs.value[id])
       runs.value = { ...runs.value, [id]: { ...runs.value[id], ...patch } }
@@ -61,7 +51,8 @@ export function useExampleRunner(snapshot: Ref<WorkbenchSnapshot | undefined>, r
       return
     const id = guide.id
     const text = message.value.trim()
-    const clientKeyId = keyId.value
+    const clientKeyId = catalog.clientKeyId.value
+    const model = catalog.modelId.value
     const abort = new AbortController()
     controller = abort
     activeId.value = id
@@ -70,7 +61,7 @@ export function useExampleRunner(snapshot: Ref<WorkbenchSnapshot | undefined>, r
       input: text,
       output: '',
       error: '',
-      accounts: [],
+      requestedModel: guide.action === 'echo' ? null : model,
       requestId: null,
       model: null,
       inputTokens: null,
@@ -88,49 +79,30 @@ export function useExampleRunner(snapshot: Ref<WorkbenchSnapshot | undefined>, r
         update(id, { output: await echo(text) })
       }
       else {
-        if (guide.action !== 'accounts' && (!clientKeyId || !text))
-          throw new Error('请选择可用 Key 并填写文本')
-        const accounts = await prepareDemoAccounts()
-        if (disposed || abort.signal.aborted)
-          return
-        update(id, { accounts })
-        if (guide.action === 'accounts') {
-          update(id, { output: '演示账号已就绪' })
-        }
-        else {
-          const model = guide.action === 'request' ? 'demo-auto' : 'demo-echo'
-          const models = await listModels(clientKeyId)
-          if (disposed || abort.signal.aborted)
-            return
-          if (!models.includes(model))
-            throw new Error('所选 Key 无法访问演示模型，请检查 Key 的模型和账号范围')
-          const response = await modelResponses({
-            clientKeyId,
-            body: {
-              model,
-              input: text,
-              stream: true,
-              store: false,
-              metadata: {
-                capability_workbench: 'true',
-                ...(guide.action === 'uppercase' ? { capability_workbench_uppercase: 'true' } : {}),
-              },
+        if (!clientKeyId || !model || !text || catalog.loading.value)
+          throw new Error('请选择可用 Key、模型并填写文本')
+        const response = await modelResponses({
+          clientKeyId,
+          body: {
+            model,
+            input: text,
+            stream: true,
+            store: false,
+            metadata: {
+              capability_workbench: 'true',
+              ...(guide.action === 'uppercase' ? { capability_workbench_uppercase: 'true' } : {}),
             },
-            signal: abort.signal,
-          })
-          update(id, { requestId: response.headers.get('x-gateway-request-id') })
-          const result = await consumeModelResponse(response, {
-            onDelta(delta) {
-              if (!abort.signal.aborted)
-                update(id, { output: (runs.value[id]?.output ?? '') + delta, chunks: (runs.value[id]?.chunks ?? 0) + 1 })
-            },
-          })
-          update(id, { model: result.model, inputTokens: result.inputTokens, outputTokens: result.outputTokens, totalTokens: result.totalTokens })
-          if (guide.action === 'uppercase' && runs.value[id]?.output !== text.toUpperCase())
-            throw new Error('模型已返回，但大写转换未生效。请在当前配置的“生效请求”中开启“请求中间件 · 请求开始”，并将所选 Key 纳入范围。')
-          if (guide.action === 'request' && result.model !== 'demo-echo')
-            throw new Error('模型已返回，但路由未生效。请在当前配置的“生效请求”中开启模型路由，并将所选 Key 纳入范围。')
-        }
+          },
+          signal: abort.signal,
+        })
+        update(id, { requestId: response.headers.get('x-gateway-request-id') })
+        const result = await consumeModelResponse(response, {
+          onDelta(delta) {
+            if (!abort.signal.aborted)
+              update(id, { output: (runs.value[id]?.output ?? '') + delta, chunks: (runs.value[id]?.chunks ?? 0) + 1 })
+          },
+        })
+        update(id, { model: result.model, inputTokens: result.inputTokens, outputTokens: result.outputTokens, totalTokens: result.totalTokens })
       }
       if (!abort.signal.aborted)
         update(id, { phase: 'done', durationMs: Math.round(performance.now() - startedAt) })
@@ -159,5 +131,5 @@ export function useExampleRunner(snapshot: Ref<WorkbenchSnapshot | undefined>, r
     stop()
   })
 
-  return { selectedId, keyId, message, examples, selected, run, activeId, keyOptions, evidence, execute, stop }
+  return { selectedId, catalog, message, examples, selected, run, activeId, evidence, execute, stop }
 }

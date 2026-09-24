@@ -1,6 +1,5 @@
 use super::scope::{ScopeTracker, body_has_scope_marker};
 use crate::evidence::{EvidenceInput, EvidenceLog};
-use crate::provider::{AUTO_MODEL, ECHO_MODEL, PROVIDER_ID};
 use gateway_plugin_sdk::{
     PluginFault,
     call::policy::{ModelRouteDecision, ModelRouteRequest},
@@ -14,29 +13,20 @@ pub(crate) async fn route_model(
     call: TypedCall<ModelRouteRequest>,
 ) -> Result<TypedReply<ModelRouteDecision>, PluginFault> {
     let marked = body_has_scope_marker(&call.payload);
-    let scoped = marked
-        || scope.contains(&call.request.request_id)
-        || matches!(call.request.model.as_str(), ECHO_MODEL | AUTO_MODEL);
+    let scoped = marked || scope.contains(&call.request.request_id);
     if !scoped {
         return Ok(TypedReply::new(ModelRouteDecision::Unhandled));
     }
     if marked {
         scope.mark(&call.request.request_id);
     }
-    let decision = if call.request.model == AUTO_MODEL
-        && (call.request.available_providers.is_empty()
-            || call
-                .request
-                .available_providers
-                .iter()
-                .any(|provider| provider == PROVIDER_ID))
-    {
-        ModelRouteDecision::Route {
-            provider: Some(PROVIDER_ID.to_owned()),
-            model: Some(ECHO_MODEL.to_owned()),
-        }
-    } else {
-        ModelRouteDecision::Unhandled
+    // 平台候选还未按模型能力过滤；存在多个时交回宿主，避免误选不支持该模型的平台。
+    let decision = match call.request.available_providers.as_slice() {
+        [provider] => ModelRouteDecision::Route {
+            provider: Some(provider.clone()),
+            model: None,
+        },
+        _ => ModelRouteDecision::Unhandled,
     };
     let mut item = EvidenceInput::passed("model_router", "route_decided");
     item.request_id = Some(&call.request.request_id);
