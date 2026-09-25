@@ -21,9 +21,9 @@ dist/                  安装包与校验文件，不入库
 
 ## 本地开发
 
-工具链：Node.js 24、pnpm 11.7、Rust 1.97
+工具链：Node.js 24、pnpm 12.6、Rust 1.97
 
-仅需检出本仓库。SDK 固定到 `f770ba127d1293bb482921019e61cae7cb3b7de9`，UI 使用 GitHub Release `v0.1.0` 的安装包；两者均由锁文件固定，不依赖本机同级目录。在仓库根目录执行：
+仅需检出本仓库。SDK 固定到 `f770ba127d1293bb482921019e61cae7cb3b7de9`，UI 使用固定 GitHub 标签 `v0.2.0`，安装时由 `prepack` 生成产物；两者均由锁文件固定，不依赖本机同级目录。在仓库根目录执行：
 
 ```bash
 pnpm --dir examples/workbench/frontend install --frozen-lockfile
@@ -37,6 +37,8 @@ pnpm --dir examples/workbench/frontend lint
 pnpm --dir examples/workbench/frontend build
 RUST_MIN_STACK=16777216 cargo test --locked --manifest-path examples/workbench/backend/Cargo.toml
 ```
+
+需要同时修改宿主或组件库时，可通过宿主的 `modules/plugins` 子模块开发，使用 [宿主源码联调入口](https://github.com/zyycn/codex-proxy-rs/blob/main/docs/development.md) 临时引用本地 UI 和 SDK；正式构建仍使用本仓库锁定的依赖。
 
 Vite 独立预览与宿主安装是两种环境。已安装插件使用包内 JS/CSS，修改源码后需重新构建、打包并切换版本。
 
