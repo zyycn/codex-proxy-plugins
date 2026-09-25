@@ -11,7 +11,7 @@ use tokio::{
     task::JoinHandle,
 };
 
-const MAXIMUM_FRAME_BYTES: usize = 1024 * 1024;
+const PIPE_BUFFER_BYTES: usize = 1024 * 1024;
 pub type CallbackReply = Result<(Value, Vec<u8>), PluginFault>;
 
 // 从公开会话入口验证真实处理器；只替换宿主资源，不复制生产模块或扩大可见性。
@@ -24,7 +24,7 @@ pub struct Peer {
 
 impl Peer {
     pub async fn start() -> Self {
-        let (host, transport) = tokio::io::duplex(MAXIMUM_FRAME_BYTES * 2);
+        let (host, transport) = tokio::io::duplex(PIPE_BUFFER_BYTES * 2);
         let (reader, writer) = tokio::io::split(transport);
         let task = tokio::spawn(async move {
             let session = PluginSession::accept(reader, writer, SessionConfig::default())
@@ -201,19 +201,14 @@ impl Peer {
     }
 
     pub async fn send(&mut self, frame: Frame) {
-        write_frame(&mut self.writer, &frame, MAXIMUM_FRAME_BYTES)
-            .await
-            .unwrap();
+        write_frame(&mut self.writer, &frame).await.unwrap();
     }
 
     pub async fn receive(&mut self) -> Frame {
-        tokio::time::timeout(
-            Duration::from_secs(10),
-            read_frame(&mut self.reader, MAXIMUM_FRAME_BYTES),
-        )
-        .await
-        .expect("插件响应超时")
-        .unwrap()
+        tokio::time::timeout(Duration::from_secs(10), read_frame(&mut self.reader))
+            .await
+            .expect("插件响应超时")
+            .unwrap()
     }
 }
 

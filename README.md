@@ -23,7 +23,7 @@ dist/                  安装包与校验文件，不入库
 
 工具链：Node.js 24、pnpm 11.7、Rust 1.97
 
-仅需检出本仓库。SDK 固定到 `687ebd0331846e155e0268cba390ccdbe6aaa887`，UI 使用 GitHub Release `v0.1.0` 的安装包；两者均由锁文件固定，不依赖本机同级目录。在仓库根目录执行：
+仅需检出本仓库。SDK 固定到 `f770ba127d1293bb482921019e61cae7cb3b7de9`，UI 使用 GitHub Release `v0.1.0` 的安装包；两者均由锁文件固定，不依赖本机同级目录。在仓库根目录执行：
 
 ```bash
 pnpm --dir examples/workbench/frontend install --frozen-lockfile
@@ -45,7 +45,7 @@ Vite 独立预览与宿主安装是两种环境。已安装插件使用包内 JS
 安装宿主提供的打包工具，再运行脚本：
 
 ```bash
-cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev 687ebd0331846e155e0268cba390ccdbe6aaa887 codex-proxy-plugin-cli --root .tools
+cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev f770ba127d1293bb482921019e61cae7cb3b7de9 codex-proxy-plugin-cli --root .tools
 PLUGIN_CLI="$PWD/.tools/bin/cpr-plugin" bash scripts/package
 ```
 
@@ -59,7 +59,7 @@ SDK、打包器和 UI 组件库各自维护版本。更新依赖时使用发布�
 
 更新插件清单版本和 `release/notes.md`，从 `main` 推送对应的 `v<插件版本>` 标签。发布工作流在质量检查通过后构建 Linux x86_64、Linux aarch64 和 macOS aarch64 安装包，并附 `.sha256` 校验文件。
 
-当前 SDK 与插件接口处于实验阶段，插件发布标记为 Pre-release。插件工作台要求支持清单 v3、协议 v4 的宿主，版本范围为 `>=3.14.0, <4.0.0`，不能安装到不支持插件能力的 `3.13.1` 正式宿主。
+当前 SDK 与插件接口处于实验阶段，插件发布标记为 Pre-release。插件工作台要求支持清单 v1、协议 v1 的宿主，版本范围为 `>=3.14.0, <4.0.0`，不能安装到不支持插件能力的 `3.13.1` 正式宿主。
 
 宿主文档按所用 SDK 版本查阅：
 

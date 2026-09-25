@@ -1,5 +1,5 @@
 {
-  "manifestVersion": 3,
+  "manifestVersion": 1,
   "name": "capability-workbench",
   "displayName": "插件工作台",
   "publisher": "codex-proxy",

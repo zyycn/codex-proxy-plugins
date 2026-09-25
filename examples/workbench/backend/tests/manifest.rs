@@ -1,13 +1,13 @@
 use std::collections::BTreeSet;
 
 use codex_proxy_plugin_workbench::{PLUGIN_ID, manifest, plugin};
-use gateway_plugin_sdk::{Capability, Permission, Stage};
+use gateway_plugin_sdk::{Capability, MANIFEST_VERSION, Permission, Stage};
 
 #[test]
 fn checked_in_manifest_is_the_complete_author_contract() {
     let manifest = manifest().unwrap();
     assert_eq!(manifest.plugin_id().unwrap(), PLUGIN_ID);
-    assert_eq!(manifest.manifest_version, 3);
+    assert_eq!(manifest.manifest_version, MANIFEST_VERSION);
     assert_eq!(
         manifest.permissions,
         [
