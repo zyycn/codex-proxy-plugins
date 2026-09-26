@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath, URL } from 'node:url'
+import CodexProxyUI from '@codex-proxy/ui/vite'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
@@ -9,21 +10,7 @@ export default defineConfig(({ mode, command }) => {
   const uiRoot = new URL('../../../../ui/', import.meta.url)
   return {
     resolve: {
-      // 源码联调显式启用；普通开发与发行构建继续使用锁定的包。
-      alias: [
-        { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
-        ...(sourceUi
-          ? [
-              { find: /^@codex-proxy\/ui$/, replacement: fileURLToPath(new URL('src/index.ts', uiRoot)) },
-              { find: '@codex-proxy/ui/theme', replacement: fileURLToPath(new URL('src/theme/index.ts', uiRoot)) },
-              { find: '@codex-proxy/ui/styles.css', replacement: fileURLToPath(new URL('src/styles/index.css', uiRoot)) },
-              { find: '@codex-proxy/ui/tailwind.css', replacement: fileURLToPath(new URL('src/styles/tailwind.css', uiRoot)) },
-              { find: /^@codex-proxy\/ui\/(.+)$/, replacement: fileURLToPath(new URL('src/components/$1/index.ts', uiRoot)) },
-            ]
-          : []),
-      ],
-      // 与共享 UI 使用同一份图标上下文，确保按钮的默认尺寸能够传给图标。
-      dedupe: ['vue', '@lucide/vue'],
+      alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
     },
     define: {
       'process.env.NODE_ENV': JSON.stringify(command === 'serve' ? 'development' : 'production'),
@@ -31,6 +18,7 @@ export default defineConfig(({ mode, command }) => {
     plugins: [
       vue(),
       tailwindcss(),
+      CodexProxyUI({ source: sourceUi ? uiRoot : undefined }),
       {
         name: 'plugin-page-entry',
         async generateBundle() {
@@ -45,9 +33,6 @@ export default defineConfig(({ mode, command }) => {
         },
       },
     ],
-    server: {
-      fs: sourceUi ? { allow: [fileURLToPath(new URL('.', import.meta.url)), fileURLToPath(uiRoot)] } : undefined,
-    },
     build: {
       outDir: sourceUi ? '.vite/source-dist' : 'dist',
       lib: {

@@ -1,4 +1,3 @@
-mod models;
 mod registration;
 mod response;
 mod router;

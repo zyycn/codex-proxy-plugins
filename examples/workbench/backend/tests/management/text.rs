@@ -4,6 +4,59 @@ use serde_json::json;
 use crate::support::Peer;
 
 #[tokio::test]
+async fn text_fetch_truncates_only_incomplete_utf8_and_preserves_exact_limit() {
+    const LIMIT: usize = 256 * 1024;
+    for (tail, prefix_len, expected_status, truncated) in [
+        ("中".as_bytes(), LIMIT - 1, 200, true),
+        ("😀".as_bytes(), LIMIT - 2, 200, true),
+        (&b"\xff"[..], LIMIT - 1, 502, false),
+        (&b"\xffab"[..], LIMIT - 1, 502, true),
+        (&b"a"[..], LIMIT - 1, 200, false),
+    ] {
+        let mut source = vec![b'a'; prefix_len];
+        source.extend_from_slice(tail);
+        let mut chunks = source.chunks(64 * 1024);
+        let mut closed = false;
+        let mut peer = Peer::start().await;
+        let (status, body) = peer
+            .api(
+                "POST",
+                "api/fetch-text",
+                Some(json!({"url":"https://example.test/text"})),
+                |method, _, _| match method {
+                    "host.http.do_stream" => Ok((
+                        json!({"status":200,"headers":[],"stream":"test-stream"}),
+                        Vec::new(),
+                    )),
+                    "host.http.stream_read" => {
+                        let chunk = chunks.next();
+                        Ok((
+                            json!({"eof":chunk.is_none()}),
+                            chunk.unwrap_or_default().to_vec(),
+                        ))
+                    }
+                    "host.http.stream_close" => {
+                        closed = true;
+                        Ok((json!({}), Vec::new()))
+                    }
+                    _ => panic!("出现未预期的宿主回调：{method}"),
+                },
+            )
+            .await;
+        assert_eq!(status, expected_status);
+        assert_eq!(closed, truncated);
+        if status == 200 {
+            let expected_len = if truncated { prefix_len } else { LIMIT };
+            assert_eq!(body["truncated"], truncated);
+            assert_eq!(body["bytes"], expected_len);
+            assert_eq!(body["text"], "a".repeat(expected_len));
+        } else {
+            assert_eq!(body["error"]["code"], "invalid_response");
+        }
+    }
+}
+
+#[tokio::test]
 async fn text_fetch_accepts_text_and_closes_rejected_sources() {
     for (source_status, content_type, expected_status) in [
         (200, "text/html; charset=utf-8", 200),

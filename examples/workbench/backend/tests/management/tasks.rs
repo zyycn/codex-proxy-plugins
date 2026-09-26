@@ -4,6 +4,39 @@ use serde_json::json;
 use crate::support::{Peer, no_callback};
 
 #[tokio::test]
+async fn task_history_reads_empty_saved_and_unsupported_state() {
+    let value = json!({"selectedId":null,"entries":[]});
+    let mut peer = Peer::start().await;
+    for (record, expected_status, expected_body) in [
+        (json!(null), 200, json!({"version":null,"value":null})),
+        (
+            json!({"schema_version":1,"version":4,"value":value}),
+            200,
+            json!({"version":4,"value":value}),
+        ),
+        (
+            json!({"schema_version":2,"version":4,"value":value}),
+            500,
+            json!({"error":{"code":"invalid_state","message":"已保存的工作台记录格式不受支持"}}),
+        ),
+        (
+            json!({"schema_version":1,"version":4,"value":false}),
+            500,
+            json!({"error":{"code":"invalid_state","message":"已保存的工作台记录无效"}}),
+        ),
+    ] {
+        let response = peer
+            .api("GET", "api/tasks", None, |method, params, _| {
+                assert_eq!(method, "host.state.get");
+                assert_eq!(params, &json!({"namespace":"workbench","key":"tasks"}));
+                Ok((json!({"record":record}), Vec::new()))
+            })
+            .await;
+        assert_eq!(response, (expected_status, expected_body));
+    }
+}
+
+#[tokio::test]
 async fn task_history_preserves_multiline_text() {
     let mut peer = Peer::start().await;
     let task = json!({

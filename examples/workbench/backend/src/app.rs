@@ -33,7 +33,7 @@ pub fn plugin() -> Result<ComposedPlugin, AuthorError> {
         .middleware(move |call| {
             let evidence = Arc::clone(&middleware_evidence);
             let scope = Arc::clone(&middleware_scope);
-            async move { request::middleware(evidence, scope, call).await }
+            async move { request::middleware(&evidence, &scope, call).await }
         })?
         .on(methods::ROUTE_MODEL, move |call| {
             let evidence = Arc::clone(&route_evidence);
@@ -65,7 +65,7 @@ pub fn plugin() -> Result<ComposedPlugin, AuthorError> {
         })?
         .management(management::registration(), move |call| {
             let evidence = Arc::clone(&management_evidence);
-            async move { management::handle(evidence, call).await }
+            async move { management::handle(&evidence, call).await }
         })?
         .command_line(command::command_registration(), move |call| {
             let evidence = Arc::clone(&command_evidence);

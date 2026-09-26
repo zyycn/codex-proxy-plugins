@@ -1,72 +1,102 @@
-# Codex Proxy 插件示例
+<!-- prettier-ignore -->
+<div align="center">
 
-面向插件作者的官方示例仓库。插件独立于宿主发布，通过公开 SDK 和宿主桥接入，不复制宿主业务模块。
+<img src="https://raw.githubusercontent.com/zyycn/codex-proxy-rs/main/frontend/public/favicon.svg" alt="Codex Proxy" width="80" height="80" />
 
-[插件工作台](examples/workbench/README.md) 提供基础能力体验、接入指南，以及摘要、翻译、改写组成的文本处理示例。
+# Codex Proxy Plugins
 
-## 目录
+通过可运行的示例，开发你的 Codex Proxy 插件
 
-```text
-examples/workbench/
-├── plugin.json        插件清单
-├── backend/           Rust 工程与后端测试
-├── frontend/          Vue 工程、独立依赖及前端工具配置
-└── README.md          功能与开发说明
+[![CI](https://github.com/zyycn/codex-proxy-plugins/actions/workflows/ci.yml/badge.svg)](https://github.com/zyycn/codex-proxy-plugins/actions/workflows/ci.yml)
+[![插件下载](https://img.shields.io/badge/下载-插件安装包-blue?style=flat-square)](https://github.com/zyycn/codex-proxy-plugins/releases)
 
-scripts/package        构建与打包入口
-dist/                  安装包与校验文件，不入库
-```
+[体验插件](#体验插件) · [本地开发](#本地开发) · [构建安装包](#构建安装包) · [文档](#文档)
 
-仓库根目录不维护 Node 工程。每个示例的前后端分别管理依赖，具体目录和职责见示例说明。
+</div>
+
+[Codex Proxy RS](https://github.com/zyycn/codex-proxy-rs) 的插件示例仓库。后端使用公开 Rust SDK，页面使用宿主桥与 `@codex-proxy/ui`，可以独立构建和发布。
+
+目前提供一个完整示例：[**插件工作台**](examples/workbench/README.md)。你可以先体验功能，再按需要阅读对应处理器：
+
+| 功能 | 可以学到什么 |
+| --- | --- |
+| 基础示例 | 文本大写转换、模型路由、账号调度、请求与用量观察、管理接口 |
+| 接入指南 | 终端命令、自定义客户端认证 |
+| 文本工作台 | 摘要、翻译、改写、网页取文、流式生成、取消、继续调整与保存记录 |
+
+## 体验插件
+
+1. 从 [Releases](https://github.com/zyycn/codex-proxy-plugins/releases) 下载与**宿主运行平台**匹配的 `.tar.gz`，同时下载 `.sha256` 核对摘要。
+2. 在宿主「插件管理」中上传安装包，查看声明的权限并安装。
+3. 启用自动准备的默认配置，从「扩展页」打开「插件工作台」。模型示例需要选择已有的可用 Key 和模型。
+
+> [!IMPORTANT]
+> 插件接口仍处于实验阶段，发行包标记为 Pre-release。宿主须支持清单 v1、协议 v1，并满足 `>=3.14.0, <4.0.0`；`3.13.1` 不支持安装。通过 GitHub 来源安装时，需要明确填写发行标签并允许预发行。
+
+工作台声明 `network`、`models`、`requests`、`public_endpoints` 四个访问域。插件进程与宿主使用相同系统身份；运行模型示例会产生真实用量。各能力的触发条件见[示例说明](examples/workbench/README.md#能力与边界)。
 
 ## 本地开发
 
-工具链：Node.js 24、pnpm 12.6、Rust 1.97
-
-仅需检出本仓库。SDK 固定到 `f770ba127d1293bb482921019e61cae7cb3b7de9`，UI 使用固定 GitHub 标签 `v0.2.0`，安装时由 `prepack` 生成产物；两者均由锁文件固定，不依赖本机同级目录。在仓库根目录执行：
+准备 **Rust 1.97、Node.js 24、pnpm 12.6**，然后执行：
 
 ```bash
+git clone https://github.com/zyycn/codex-proxy-plugins.git
+cd codex-proxy-plugins
 pnpm --dir examples/workbench/frontend install --frozen-lockfile
 pnpm --dir examples/workbench/frontend dev
 ```
 
-验证入口：
+独立预览使用模拟宿主，适合阅读页面和调试交互，不调用真实模型。后端由宿主通过标准输入输出启动，实际能力需要构建安装包后验证。
+
+```text
+examples/workbench/
+├── plugin.json    插件身份、能力、权限与资源声明
+├── backend/       Rust 处理器与会话测试
+├── frontend/      Vue 页面、宿主桥与独立预览
+└── README.md      按能力阅读源码与接口说明
+scripts/package   构建并打包
+dist/             安装包与校验文件（不入库）
+```
+
+从 [`app.rs`](examples/workbench/backend/src/app.rs) 查看处理器如何组合，再按[源码导航](examples/workbench/README.md#从哪里读起)选择需要的能力。开发自己的插件时，只保留需要的处理器及对应清单声明。
+
+SDK 固定到提交 `f770ba127d1293bb482921019e61cae7cb3b7de9`，UI 使用 `v0.3.0`，实际依赖由各自锁文件固定；无需检出宿主或组件库。需要联合修改时，使用宿主的[源码联调入口](https://github.com/zyycn/codex-proxy-rs/blob/main/docs/development.md)，正式构建仍使用锁定依赖。
+
+在本仓库根目录执行检查：
 
 ```bash
 pnpm --dir examples/workbench/frontend lint
 pnpm --dir examples/workbench/frontend build
-RUST_MIN_STACK=16777216 cargo test --locked --manifest-path examples/workbench/backend/Cargo.toml
+cargo fmt --manifest-path examples/workbench/backend/Cargo.toml --check
+RUST_MIN_STACK=16777216 cargo clippy --manifest-path examples/workbench/backend/Cargo.toml --all-targets --all-features --locked -- -D warnings
+RUST_MIN_STACK=16777216 cargo test --manifest-path examples/workbench/backend/Cargo.toml --locked
 ```
 
-需要同时修改宿主或组件库时，可通过宿主的 `modules/plugins` 子模块开发，使用 [宿主源码联调入口](https://github.com/zyycn/codex-proxy-rs/blob/main/docs/development.md) 临时引用本地 UI 和 SDK；正式构建仍使用本仓库锁定的依赖。
+## 构建安装包
 
-Vite 独立预览与宿主安装是两种环境。已安装插件使用包内 JS/CSS，修改源码后需重新构建、打包并切换版本。
-
-## 打包
-
-安装宿主提供的打包工具，再运行脚本：
+安装与 SDK 同一提交的打包工具，在仓库根目录运行：
 
 ```bash
 cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev f770ba127d1293bb482921019e61cae7cb3b7de9 codex-proxy-plugin-cli --root .tools
 PLUGIN_CLI="$PWD/.tools/bin/cpr-plugin" bash scripts/package
 ```
 
-默认构建本机平台，也可传入目标平台：`bash scripts/package aarch64-unknown-linux-gnu`。支持 Linux x86_64、Linux aarch64、macOS aarch64，交叉构建需准备对应 Rust target 和链接工具。
+脚本构建前后端，在 `dist/` 生成 `.tar.gz` 和 `.sha256`。默认使用本机平台，也可指定目标，例如：
 
-产物进入根目录 `dist/`，包括 `.tar.gz` 安装包和 `.sha256`。打包不代表安装、启用或实际能力验证成功。
+```bash
+PLUGIN_CLI="$PWD/.tools/bin/cpr-plugin" bash scripts/package aarch64-unknown-linux-gnu
+```
 
-## 依赖与发行
+支持 Linux x86_64、Linux aarch64、macOS aarch64；交叉构建需准备对应 Rust target 和链接工具。已安装插件使用包内资源，修改源码后需重新构建、打包并切换版本。
 
-SDK、打包器和 UI 组件库各自维护版本。更新依赖时使用发布包或固定 Git 提交，重新生成并提交锁文件，不使用浮动分支或开发机路径。
+发行时同步 `plugin.json` 的版本和 `release/notes.md`，从 `main` 推送对应的 `v<插件版本>` 标签。[发布工作流](.github/workflows/release.yml)在检查通过后生成三个平台的安装包与校验文件。
 
-更新插件清单版本和 `release/notes.md`，从 `main` 推送对应的 `v<插件版本>` 标签。发布工作流在质量检查通过后构建 Linux x86_64、Linux aarch64 和 macOS aarch64 安装包，并附 `.sha256` 校验文件。
+## 文档
 
-当前 SDK 与插件接口处于实验阶段，插件发布标记为 Pre-release。插件工作台要求支持清单 v1、协议 v1 的宿主，版本范围为 `>=3.14.0, <4.0.0`，不能安装到不支持插件能力的 `3.13.1` 正式宿主。
-
-宿主文档按所用 SDK 版本查阅：
-
-| 宿主仓库路径 | 内容 |
+| 任务 | 入口 |
 | --- | --- |
-| `backend/crates/gateway-plugin/sdk/README.md` | 清单、会话与能力合同 |
-| `backend/apps/plugin-cli/README.md` | 打包参数与平台要求 |
-| `docs/plugins.md` | 安装、权限、使用与版本管理 |
+| 阅读示例与管理接口 | [插件工作台](examples/workbench/README.md) |
+| 安装、配置与管理版本 | [宿主插件使用说明](https://github.com/zyycn/codex-proxy-rs/blob/main/docs/plugins.md) |
+| 编写 Rust 插件 | [SDK](https://github.com/zyycn/codex-proxy-rs/blob/f770ba127d1293bb482921019e61cae7cb3b7de9/backend/crates/gateway-plugin/sdk/README.md) · [清单](https://github.com/zyycn/codex-proxy-rs/blob/f770ba127d1293bb482921019e61cae7cb3b7de9/backend/crates/gateway-plugin/sdk/docs/manifest.md) · [能力合同](https://github.com/zyycn/codex-proxy-rs/blob/f770ba127d1293bb482921019e61cae7cb3b7de9/backend/crates/gateway-plugin/sdk/docs/capabilities.md) |
+| 自定义打包流程 | [插件 CLI](https://github.com/zyycn/codex-proxy-rs/blob/f770ba127d1293bb482921019e61cae7cb3b7de9/backend/apps/plugin-cli/README.md) |
+| 编写管理页面 | [UI 组件库](https://github.com/zyycn/codex-proxy-ui) · [宿主主题约定](https://github.com/zyycn/codex-proxy-rs/blob/main/docs/theme.md) |

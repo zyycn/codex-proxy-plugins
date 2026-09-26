@@ -1,33 +1,33 @@
-use super::validation::{bounded, require_empty_body, require_empty_json};
 use super::{
-    response::{api_error, host_error, json_reply},
-    validation::{decode_json, require_json},
+    response::{ApiError, ApiResult, json_reply},
+    validation::{bounded, decode_json, require_empty_body, require_empty_json},
 };
-use crate::evidence::{EvidenceInput, EvidenceSnapshot, ExampleStatus};
-use crate::{evidence::EvidenceLog, host_calls};
-use gateway_plugin_sdk::call::host::{LogLevel, LogRequest};
+use crate::{
+    evidence::{EvidenceInput, EvidenceLog, EvidenceSnapshot, ExampleStatus},
+    host_calls,
+};
 use gateway_plugin_sdk::{
-    PluginFault,
-    call::management::{ManagementRequest, ManagementResponse},
-    client::{TypedCall, TypedReply},
+    call::{
+        host::{ClientKey, LogLevel, LogRequest},
+        management::ManagementRequest,
+    },
+    client::TypedCall,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::BTreeMap;
 
-const MAXIMUM_ECHO_BYTES: usize = 4 * 1024;
-
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct SnapshotResponse {
     contract_version: u32,
-    keys: Vec<gateway_plugin_sdk::call::host::ClientKey>,
+    keys: Vec<ClientKey>,
     keys_next_cursor: Option<String>,
     examples: Vec<ExampleStatus>,
     facts: EvidenceSnapshot,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct EchoRequest {
     message: String,
@@ -36,63 +36,56 @@ struct EchoRequest {
 pub(super) async fn snapshot(
     evidence: &EvidenceLog,
     call: TypedCall<ManagementRequest>,
-) -> Result<TypedReply<ManagementResponse>, PluginFault> {
-    if let Err(reply) = require_empty_body(&call.request, &call.payload) {
-        return reply;
-    }
-    match host_calls::list_keys(&call.host, None, 100).await {
-        Ok(keys) => json_reply(
-            200,
-            &SnapshotResponse {
-                contract_version: 1,
-                keys: keys.keys,
-                keys_next_cursor: keys.next_cursor,
-                examples: evidence.examples(),
-                facts: evidence.snapshot(),
-            },
-        ),
-        Err(error) => host_error(error),
-    }
+) -> ApiResult {
+    require_empty_body(&call.request, &call.payload)?;
+    let keys = host_calls::list_keys(&call.host, None, 100).await?;
+    json_reply(&SnapshotResponse {
+        contract_version: 1,
+        keys: keys.keys,
+        keys_next_cursor: keys.next_cursor,
+        examples: evidence.examples(),
+        facts: evidence.snapshot(),
+    })
 }
 
-pub(super) async fn echo(
-    _evidence: &EvidenceLog,
-    call: TypedCall<ManagementRequest>,
-) -> Result<TypedReply<ManagementResponse>, PluginFault> {
-    if let Err(reply) = require_json(&call.request) {
-        return reply;
+pub(super) fn echo(call: TypedCall<ManagementRequest>) -> ApiResult {
+    let request: EchoRequest = decode_json(&call)?;
+    if !bounded(&request.message, 1, 4 * 1024) {
+        return Err(ApiError::invalid(
+            "文本须为 1–4096 个 UTF-8 字节，且不含控制字符",
+        ));
     }
-    match decode_json::<EchoRequest>(&call.payload).and_then(validate_echo) {
-        Ok(message) => json_reply(200, &message),
-        Err(error) => api_error(400, "invalid_request", error),
-    }
+    json_reply(&request)
 }
 
-pub(super) async fn log(
-    evidence: &EvidenceLog,
-    call: TypedCall<ManagementRequest>,
-) -> Result<TypedReply<ManagementResponse>, PluginFault> {
-    if let Err(reply) = require_empty_json(&call.request, &call.payload) {
-        return reply;
-    }
-    let request = LogRequest {
-        event: "capability_workbench.demo_log".to_owned(),
-        level: LogLevel::Info,
-        fields: BTreeMap::from([("source".to_owned(), json!("management"))]),
-    };
-    match host_calls::log(&call.host, &request).await {
-        Ok(result) => {
-            evidence.record(EvidenceInput::passed("host_services", "log_submitted"));
-            json_reply(200, &result)
-        }
-        Err(error) => host_error(error),
-    }
+pub(super) async fn log(evidence: &EvidenceLog, call: TypedCall<ManagementRequest>) -> ApiResult {
+    require_empty_json(&call.request, &call.payload)?;
+    let result = host_calls::log(
+        &call.host,
+        &LogRequest {
+            event: "capability_workbench.demo_log".to_owned(),
+            level: LogLevel::Info,
+            fields: BTreeMap::from([("source".to_owned(), json!("management"))]),
+        },
+    )
+    .await?;
+    evidence.record(EvidenceInput::passed("host_services", "log_submitted"));
+    json_reply(&result)
 }
 
-fn validate_echo(request: EchoRequest) -> Result<EchoRequest, &'static str> {
-    if bounded(&request.message, 1, MAXIMUM_ECHO_BYTES) {
-        Ok(request)
-    } else {
-        Err("文本须为 1–4096 个 UTF-8 字节，且不含控制字符")
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ModelsRequest {
+    client_key_id: String,
+}
+
+pub(super) async fn list_models(call: TypedCall<ManagementRequest>) -> ApiResult {
+    let request: ModelsRequest = decode_json(&call)?;
+    if !bounded(&request.client_key_id, 1, 256) {
+        return Err(ApiError::invalid(
+            "clientKeyId must be a non-empty bounded identifier",
+        ));
     }
+    let result = host_calls::list_models(&call.host, request.client_key_id).await?;
+    json_reply(&result)
 }

@@ -1,24 +1,18 @@
 use super::{
-    response::encoding_error,
-    validation::{bounded, bounded_text, require_empty_body, valid_source_url},
+    response::{ApiError, ApiResult, json_reply},
+    validation::{bounded, bounded_text, decode_json, require_empty_body, valid_source_url},
 };
-use super::{
-    response::{api_error, host_error, json_reply},
-    validation::{decode_json, require_json},
-};
-use crate::{evidence::EvidenceLog, host_calls};
-use gateway_plugin_sdk::call::host::StatePutRequest;
+use crate::host_calls;
 use gateway_plugin_sdk::{
-    PluginFault,
-    call::management::{ManagementRequest, ManagementResponse},
-    client::{TypedCall, TypedReply},
+    call::{host::StatePutRequest, management::ManagementRequest},
+    client::TypedCall,
 };
 use serde::{Deserialize, Serialize};
 
 const STATE_NAMESPACE: &str = "workbench";
 const STATE_KEY: &str = "tasks";
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Tasks {
     selected_id: Option<String>,
@@ -43,7 +37,7 @@ impl Tasks {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Task {
     id: String,
@@ -77,18 +71,18 @@ impl Task {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(transparent)]
 struct NullableString(Option<String>);
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 enum SourceKind {
     Text,
     Url,
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 enum TaskKind {
     Summarize,
@@ -109,69 +103,41 @@ struct TasksResponse {
     value: Option<Tasks>,
 }
 
-pub(super) async fn get(
-    _evidence: &EvidenceLog,
-    call: TypedCall<ManagementRequest>,
-) -> Result<TypedReply<ManagementResponse>, PluginFault> {
-    if let Err(reply) = require_empty_body(&call.request, &call.payload) {
-        return reply;
-    }
-    match host_calls::get_state(&call.host, STATE_NAMESPACE, STATE_KEY).await {
-        Ok(result) => match result.record {
-            Some(record) if record.schema_version == 1 => {
-                match serde_json::from_value::<Tasks>(record.value) {
-                    Ok(value) => json_reply(
-                        200,
-                        &TasksResponse {
-                            version: Some(record.version),
-                            value: Some(value),
-                        },
-                    ),
-                    Err(_) => api_error(500, "invalid_state", "已保存的工作台记录无效"),
-                }
+pub(super) async fn get(call: TypedCall<ManagementRequest>) -> ApiResult {
+    require_empty_body(&call.request, &call.payload)?;
+    let result = host_calls::get_state(&call.host, STATE_NAMESPACE, STATE_KEY).await?;
+    let (version, value) = match result.record {
+        Some(record) => {
+            if record.schema_version != 1 {
+                return Err(ApiError::new(
+                    500,
+                    "invalid_state",
+                    "已保存的工作台记录格式不受支持",
+                ));
             }
-            Some(_) => api_error(500, "invalid_state", "已保存的工作台记录格式不受支持"),
-            None => json_reply(
-                200,
-                &TasksResponse {
-                    version: None,
-                    value: None,
-                },
-            ),
-        },
-        Err(error) => host_error(error),
-    }
+            let value = serde_json::from_value(record.value)
+                .map_err(|_| ApiError::new(500, "invalid_state", "已保存的工作台记录无效"))?;
+            (Some(record.version), Some(value))
+        }
+        None => (None, None),
+    };
+    json_reply(&TasksResponse { version, value })
 }
 
-pub(super) async fn save(
-    _evidence: &EvidenceLog,
-    call: TypedCall<ManagementRequest>,
-) -> Result<TypedReply<ManagementResponse>, PluginFault> {
-    if let Err(reply) = require_json(&call.request) {
-        return reply;
+pub(super) async fn save(call: TypedCall<ManagementRequest>) -> ApiResult {
+    let request: SaveTasksRequest = decode_json(&call)?;
+    if !request.value.validate() {
+        return Err(ApiError::invalid("任务记录无效或超过数量与长度限制"));
     }
-    let request = match decode_json::<SaveTasksRequest>(&call.payload) {
-        Ok(request) if request.value.validate() => request,
-        _ => {
-            return api_error(400, "invalid_request", "任务记录无效或超过数量与长度限制");
-        }
-    };
-    let value = match serde_json::to_value(request.value) {
-        Ok(value) => value,
-        Err(_) => return encoding_error(),
-    };
-    match host_calls::put_state(
+    let result = host_calls::put_state(
         &call.host,
         &StatePutRequest {
             namespace: STATE_NAMESPACE.to_owned(),
             key: STATE_KEY.to_owned(),
-            value,
+            value: serde_json::to_value(request.value)?,
             expected_version: request.expected_version,
         },
     )
-    .await
-    {
-        Ok(result) => json_reply(200, &result),
-        Err(error) => host_error(error),
-    }
+    .await?;
+    json_reply(&result)
 }

@@ -15,14 +15,9 @@ pub(crate) async fn list_keys(
     cursor: Option<String>,
     limit: u16,
 ) -> Result<KeyListResult, PluginFault> {
-    metadata(
-        host,
-        "host.keys.list",
-        &KeyListRequest { cursor, limit },
-        Vec::new(),
-    )
-    .await
-    .map(|(result, _)| result)
+    metadata(host, "host.keys.list", &KeyListRequest { cursor, limit })
+        .await
+        .map(|(result, _)| result)
 }
 
 pub(crate) async fn list_models(
@@ -37,7 +32,6 @@ pub(crate) async fn list_models(
             protocol: "openai".to_owned(),
             client_version: "capability-workbench/0.1.0".to_owned(),
         },
-        Vec::new(),
     )
     .await
     .map(|(result, _)| result)
@@ -55,7 +49,6 @@ pub(crate) async fn get_state(
             namespace: namespace.to_owned(),
             key: key.to_owned(),
         },
-        Vec::new(),
     )
     .await
     .map(|(result, _)| result)
@@ -65,13 +58,13 @@ pub(crate) async fn put_state(
     host: &HostClient,
     request: &StatePutRequest,
 ) -> Result<StatePutResult, PluginFault> {
-    metadata(host, "host.state.put", request, Vec::new())
+    metadata(host, "host.state.put", request)
         .await
         .map(|(result, _)| result)
 }
 
 pub(crate) async fn log(host: &HostClient, request: &LogRequest) -> Result<LogResult, PluginFault> {
-    metadata(host, "host.log", request, Vec::new())
+    metadata(host, "host.log", request)
         .await
         .map(|(result, _)| result)
 }
@@ -85,7 +78,6 @@ pub(crate) async fn affinity(
         host,
         "host.affinity.lookup",
         &AffinityLookupRequest { provider, key },
-        Vec::new(),
     )
     .await
     .map(|(result, _)| result)
@@ -96,7 +88,7 @@ pub(crate) async fn open_http(
     request: &HttpRequest,
 ) -> Result<HttpResponse, PluginFault> {
     let (response, payload): (HttpResponse, Vec<u8>) =
-        metadata(host, "host.http.do_stream", request, Vec::new()).await?;
+        metadata(host, "host.http.do_stream", request).await?;
     if !payload.is_empty() || response.stream.is_none() {
         return Err(invalid_callback());
     }
@@ -115,7 +107,6 @@ pub(crate) async fn read_http(
             stream,
             maximum_bytes,
         },
-        Vec::new(),
     )
     .await?;
     let eof = result
@@ -131,13 +122,8 @@ pub(crate) async fn read_http(
 }
 
 pub(crate) async fn close_http(host: &HostClient, stream: String) -> Result<(), PluginFault> {
-    let (result, payload): (Map<String, Value>, Vec<u8>) = metadata(
-        host,
-        "host.http.stream_close",
-        &StreamClose { stream },
-        Vec::new(),
-    )
-    .await?;
+    let (result, payload): (Map<String, Value>, Vec<u8>) =
+        metadata(host, "host.http.stream_close", &StreamClose { stream }).await?;
     if !result.is_empty() || !payload.is_empty() {
         return Err(invalid_callback());
     }
@@ -148,7 +134,6 @@ async fn metadata<I, O>(
     host: &HostClient,
     method: &str,
     input: &I,
-    payload: Vec<u8>,
 ) -> Result<(O, Vec<u8>), PluginFault>
 where
     I: Serialize,
@@ -158,7 +143,7 @@ where
         .call(
             method,
             serde_json::to_value(input).map_err(|_| invalid_callback())?,
-            payload,
+            Vec::new(),
         )
         .await
         .map_err(SessionError::into_plugin_fault)?;

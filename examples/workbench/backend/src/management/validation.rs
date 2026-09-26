@@ -1,9 +1,5 @@
-use super::response::{JSON_CONTENT_TYPE, api_error};
-use gateway_plugin_sdk::{
-    PluginFault,
-    call::management::{ManagementRequest, ManagementResponse},
-    client::TypedReply,
-};
+use super::response::{ApiError, JSON_CONTENT_TYPE};
+use gateway_plugin_sdk::{call::management::ManagementRequest, client::TypedCall};
 use serde::Deserialize;
 use serde_json::{Map, Value};
 use url::Url;
@@ -11,29 +7,27 @@ use url::Url;
 pub(super) fn require_empty_body(
     request: &ManagementRequest,
     payload: &[u8],
-) -> Result<(), Result<TypedReply<ManagementResponse>, PluginFault>> {
+) -> Result<(), ApiError> {
     if request.content_type.is_none() && payload.is_empty() {
         Ok(())
     } else {
-        Err(api_error(400, "invalid_request", "此接口不接受请求正文"))
+        Err(ApiError::invalid("此接口不接受请求正文"))
     }
 }
 
 pub(super) fn require_empty_json(
     request: &ManagementRequest,
     payload: &[u8],
-) -> Result<(), Result<TypedReply<ManagementResponse>, PluginFault>> {
+) -> Result<(), ApiError> {
     require_json(request)?;
     if serde_json::from_slice::<Map<String, Value>>(payload).is_ok_and(|value| value.is_empty()) {
         Ok(())
     } else {
-        Err(api_error(400, "invalid_request", "此接口需要空 JSON 对象"))
+        Err(ApiError::invalid("此接口需要空 JSON 对象"))
     }
 }
 
-pub(super) fn require_json(
-    request: &ManagementRequest,
-) -> Result<(), Result<TypedReply<ManagementResponse>, PluginFault>> {
+pub(super) fn require_json(request: &ManagementRequest) -> Result<(), ApiError> {
     if request
         .content_type
         .as_deref()
@@ -42,7 +36,7 @@ pub(super) fn require_json(
     {
         Ok(())
     } else {
-        Err(api_error(
+        Err(ApiError::new(
             400,
             "invalid_content_type",
             "此接口需要 application/json 内容类型",
@@ -50,11 +44,11 @@ pub(super) fn require_json(
     }
 }
 
-pub(super) fn decode_json<T: for<'de> Deserialize<'de>>(payload: &[u8]) -> Result<T, &'static str> {
-    serde_json::from_slice(payload).map_err(|_| "请求正文不是有效 JSON")
-}
-pub(super) fn valid_identifier(value: &str) -> bool {
-    bounded(value, 1, 256)
+pub(super) fn decode_json<T: for<'de> Deserialize<'de>>(
+    call: &TypedCall<ManagementRequest>,
+) -> Result<T, ApiError> {
+    require_json(&call.request)?;
+    serde_json::from_slice(&call.payload).map_err(|_| ApiError::invalid("请求正文不是有效 JSON"))
 }
 
 pub(super) fn valid_source_url(value: &str) -> bool {
