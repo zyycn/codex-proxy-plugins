@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ImageTurn } from '../../types'
+import type { ImagePhase } from '../../utils/imageConversation'
 import { BaseButton, BaseMarkdown } from '@codex-proxy/ui'
 import { CircleAlert, LoaderCircle, RotateCcw } from '@lucide/vue'
 import { useTemplateRef, watch } from 'vue'
@@ -13,10 +14,13 @@ const props = defineProps<{
   running: boolean
   canSend: boolean
   error: string
+  warning: string
+  phase: ImagePhase
 }>()
 defineEmits<{ send: [], stop: [], retry: [], upload: [file?: File], remove: [], select: [id: number] }>()
 const prompt = defineModel<string>({ required: true })
 const timeline = useTemplateRef('timeline')
+const phaseLabels = { preparing: '正在准备对话', restoring: '正在恢复上下文', generating: '正在处理' }
 let followTail = true
 function scrolled() {
   const element = timeline.value
@@ -61,7 +65,7 @@ watch(() => [props.turns.length, props.turns.at(-1)?.text, props.turns.at(-1)?.s
               <img :src="turn.imageUrl" alt="" class="size-10 rounded-cp object-contain">
               <span class="text-cp-xs text-cp-text-secondary">查看本轮图片</span>
             </button>
-            <span v-if="turn.status === 'running'" class="inline-flex items-center gap-2 text-cp-xs text-cp-text-tertiary" role="status"><LoaderCircle class="size-3.5 animate-spin motion-reduce:animate-none" />正在处理</span>
+            <span v-if="turn.status === 'running'" class="inline-flex items-center gap-2 text-cp-xs text-cp-text-tertiary" role="status"><LoaderCircle class="size-3.5 animate-spin motion-reduce:animate-none" />{{ phaseLabels[phase] }}</span>
             <p v-else-if="turn.status === 'error'" class="m-0 text-cp-xs break-words text-cp-error-text" role="alert">
               {{ turn.error }}
             </p>
@@ -77,6 +81,9 @@ watch(() => [props.turns.length, props.turns.at(-1)?.text, props.turns.at(-1)?.s
     </div>
     <p v-if="error" class="m-0 flex shrink-0 items-start gap-2 text-cp-xs text-cp-error-text" role="alert">
       <CircleAlert class="mt-0.5 size-3.5 shrink-0" />{{ error }}
+    </p>
+    <p v-if="warning" class="m-0 shrink-0 text-cp-xs text-cp-text-secondary" role="status">
+      {{ warning }}
     </p>
     <ImageComposer v-model="prompt" :attachment="attachment" :attachment-name="attachmentName" :disabled="disabled" :running="running" :can-send="canSend" :continuing="Boolean(turns.length)" @send="$emit('send')" @stop="$emit('stop')" @upload="$emit('upload', $event)" @remove="$emit('remove')" />
   </section>

@@ -1,10 +1,10 @@
 // @env browser
 import type { Ref } from 'vue'
 import type { WorkbenchSnapshot } from '../api'
-import type { ImageContextItem } from '../api/modules/images'
 import type { ImageTurn } from '../types'
+import type { ImagePhase } from '../utils/imageConversation'
 import { computed, onScopeDispose, shallowRef } from 'vue'
-import { sendImageMessage } from '../api/modules/images'
+import { ImageConversation } from '../utils/imageConversation'
 import { useModelCatalog } from './useModelCatalog'
 
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024
@@ -21,12 +21,13 @@ export function useImageWorkbench(snapshot: Ref<WorkbenchSnapshot | undefined>) 
   const running = shallowRef(false)
   const reading = shallowRef(false)
   const error = shallowRef('')
+  const warning = shallowRef('')
+  const phase = shallowRef<ImagePhase>('preparing')
   const images = computed(() => turns.value.filter(turn => turn.status === 'complete' && turn.imageUrl))
   const selectedImage = computed(() => images.value.find(turn => turn.id === selectedId.value) ?? images.value.at(-1))
   const canSend = computed(() => !running.value && !reading.value && !catalog.loading.value
     && Boolean(catalog.clientKeyId.value && catalog.modelId.value && prompt.value.trim()))
-  let history: ImageContextItem[] = []
-  let identity: { key: string, model: string } | undefined
+  const conversation = new ImageConversation()
   let sequence = 0
   let controller: AbortController | undefined
   let fileReader: FileReader | undefined
@@ -86,20 +87,17 @@ export function useImageWorkbench(snapshot: Ref<WorkbenchSnapshot | undefined>) 
     running.value = true
     error.value = ''
     try {
-      // 加密推理项与图片上下文不能跨 Key 或模型接续。
-      if (identity && (identity.key !== catalog.clientKeyId.value || identity.model !== catalog.modelId.value))
-        throw new Error('会话所用 Key 或模型已变更，请新建对话')
       const key = catalog.clientKeyId.value
       const model = catalog.modelId.value
-      const reply = await sendImageMessage({
+      const reply = await conversation.send({
         clientKeyId: key,
         model,
-        history,
         prompt: turn.prompt,
         quality: quality.value,
         size: size.value,
         image: turn.attachment || undefined,
         signal: current.signal,
+        onPhase(value) { phase.value = value },
         onTextDelta(delta) {
           if (!disposed && !current.signal.aborted) {
             const text = turns.value.find(item => item.id === turn.id)?.text ?? ''
@@ -109,9 +107,7 @@ export function useImageWorkbench(snapshot: Ref<WorkbenchSnapshot | undefined>) 
       })
       if (disposed || current.signal.aborted)
         return
-      // 只提交成功轮次，失败、取消和重试都不污染模型上下文。
-      history = [...history, reply.input, ...reply.output]
-      identity = { key, model }
+      warning.value = conversation.recoveryWarning
       updateTurn(turn.id, { status: 'complete', text: reply.text, imageUrl: reply.imageUrl })
       if (reply.imageUrl)
         selectedId.value = turn.id
@@ -166,12 +162,12 @@ export function useImageWorkbench(snapshot: Ref<WorkbenchSnapshot | undefined>) 
     if (running.value)
       return
     clearAttachment()
-    history = []
-    identity = undefined
+    conversation.reset()
     turns.value = []
     selectedId.value = null
     prompt.value = ''
     error.value = ''
+    warning.value = ''
   }
 
   onScopeDispose(() => {
@@ -195,6 +191,8 @@ export function useImageWorkbench(snapshot: Ref<WorkbenchSnapshot | undefined>) 
     running,
     reading,
     error,
+    warning,
+    phase,
     canSend,
     selectFile,
     clearAttachment,

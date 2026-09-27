@@ -15,6 +15,7 @@ let sequence = 0
 let taskVersion: number | null = null
 let tasks: SavedTasks | null = null
 const evidence: Evidence[] = []
+const imageResponses = new Map<string, number>()
 const examples: WorkbenchExample[] = exampleDefinitions.map(([id, title, capabilities, trigger]) => ({
   id,
   title,
@@ -163,6 +164,18 @@ async function modelResponse(input: Parameters<PluginHost['models']['responses']
     ? input.body.tools.find(tool => tool.type === 'image_generation')
     : undefined
   if (imageTool) {
+    const previousId = input.body.previous_response_id
+    if (typeof previousId === 'string' && !imageResponses.has(previousId))
+      return Response.json({ error: { code: 'previous_response_not_found', message: '模拟会话已失效' } }, { status: 400 })
+    const previousImages = typeof previousId === 'string'
+      ? imageResponses.get(previousId)!
+      : Array.isArray(input.body.input) ? input.body.input.filter(item => item.type === 'image_generation_call').length : 0
+    const responseId = `preview-image-response-${++sequence}`
+    if (imageResponses.size >= 32)
+      imageResponses.clear()
+    imageResponses.set(responseId, previousImages + (input.body.generate === false ? 0 : 1))
+    if (input.body.generate === false)
+      return Response.json({ id: responseId, status: 'completed', output: [] })
     await delay(1200, input.signal)
     const canvas = document.createElement('canvas')
     canvas.width = 512
@@ -170,7 +183,6 @@ async function modelResponse(input: Parameters<PluginHost['models']['responses']
     const context = canvas.getContext('2d')!
     context.fillStyle = '#faf8f4'
     context.fillRect(0, 0, 512, 512)
-    const previousImages = Array.isArray(input.body.input) ? input.body.input.filter(item => item.type === 'image_generation_call').length : 0
     context.fillStyle = previousImages ? '#d95b52' : '#5085ba'
     context.fillRect(156, 130, 200, 200)
     context.fillStyle = '#666'
@@ -180,7 +192,7 @@ async function modelResponse(input: Parameters<PluginHost['models']['responses']
     const events = [
       { type: 'response.output_item.done', item: { id: `preview-image-${++sequence}`, type: 'image_generation_call', status: 'completed', result: canvas.toDataURL('image/png').split(',')[1] } },
       { type: 'response.output_item.done', item: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: previousImages ? '模拟图片已按本轮要求更新' : '模拟图片已生成，可以继续描述修改' }] } },
-      { type: 'response.completed', response: { status: 'completed', output: [] } },
+      { type: 'response.completed', response: { id: responseId, status: 'completed', output: [] } },
     ]
     return new Response(events.map(event => `data: ${JSON.stringify(event)}\n\n`).join(''), { headers: { 'content-type': 'text/event-stream' } })
   }

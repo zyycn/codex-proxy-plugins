@@ -27,7 +27,8 @@ const error = computed(() => image.error.value || image.modelsError.value || pro
       <ImageConversation
         v-model="image.prompt.value" :turns="image.turns.value" :attachment="image.attachment.value"
         :attachment-name="image.attachmentName.value" :disabled="disabled" :running="image.running.value"
-        :can-send="image.canSend.value" :error="error" @send="image.send" @stop="image.stop" @retry="image.retry"
+        :can-send="image.canSend.value" :error="error" :warning="image.warning.value" :phase="image.phase.value"
+        @send="image.send" @stop="image.stop" @retry="image.retry"
         @upload="image.selectFile" @remove="image.clearAttachment" @select="image.selectedId.value = $event"
       />
     </div>

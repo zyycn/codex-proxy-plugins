@@ -19,7 +19,7 @@
 | --- | --- | --- |
 | 简单管理接口 | [`management/workbench.rs`](backend/src/management/workbench.rs) 的 `echo` | [`api/modules/echo.ts`](frontend/src/api/modules/echo.ts) |
 | 改写请求正文 | [`request/middleware.rs`](backend/src/request/middleware.rs) | 基础示例「文字转大写」 |
-| 图片交互 | 宿主已有 Responses 页面桥 | [`images.ts`](frontend/src/api/modules/images.ts)、[`useImageWorkbench.ts`](frontend/src/composables/useImageWorkbench.ts) |
+| 图片交互 | 宿主已有 Responses 页面桥 | [`images.ts`](frontend/src/api/modules/images.ts)、[`imageConversation.ts`](frontend/src/utils/imageConversation.ts)、[`useImageWorkbench.ts`](frontend/src/composables/useImageWorkbench.ts) |
 | 图片上传协议适配 | [`request/image_edit.rs`](backend/src/request/image_edit.rs) | HTTP 客户端调用 `/v1/images/edits` |
 | 模型路由、账号选择 | [`request/routing.rs`](backend/src/request/routing.rs)、[`scheduler.rs`](backend/src/request/scheduler.rs) | 基础示例「追踪一次请求」 |
 | 请求、用量、WebSocket 观察 | [`request/observer.rs`](backend/src/request/observer.rs) | [`useExampleRunner.ts`](frontend/src/composables/useExampleRunner.ts) |
@@ -68,9 +68,18 @@ Vue 页面保留 SFC，使用 TypeScript 和 `@codex-proxy/ui`。宿主负责页
 
 选择有图片工具权限的 Key 与 OpenAI 主模型，直接描述想要的图片；生成后继续发送「换成红色」「背景改回最开始的颜色」等消息，无需切换编辑模式或重新上传结果。左侧画布展示选中的图片，底部缩略图可回看每版，右侧保留每轮指令和模型回复。参考图是可选附件，支持 PNG/JPEG/WebP，单张最多 4 MiB。图片设置可调整画质与尺寸，每次最多生成一张，也支持只回复文字。
 
-页面经 `models.responses` 调用 `image_generation` 工具，工具模型为 `gpt-image-2`，输出 PNG，`action: auto` 由模型根据会话决定生成或编辑。插件保留成功轮次的原始输入与输出项，包括图片工具输出、文字和加密推理项，并按顺序随下一轮重放；使用 `store: false`，不依赖上游持久化的 response ID。这是完整的页面会话上下文，不是仅把上一张结果重新当作附件发送。
+页面经 `models.responses` 调用 `image_generation` 工具，工具模型为 `gpt-image-2`，输出 PNG，`action: auto` 由模型根据会话决定生成或编辑。会话控制器在 [`imageConversation.ts`](frontend/src/utils/imageConversation.ts)：
 
-会话期间固定 Key 与模型，新建对话后可以重新选择。失败或停止的轮次不进入上下文，可重试最后一轮；图片版本选择只改变预览，不改变对话分支。每轮重放完整历史，图片越多，传输与上下文处理开销越大，适合短会话示例。页面桥正文上限为 8 MiB，达到上限时提示新建对话，不自动删除历史。当前示例不提供持久化会话列表，刷新或离开图片页会清空会话并取消请求。目录只表示 Key 可选模型，不保证每个模型或账号都支持图片工具；实际用量按宿主 Key 规则计费。
+1. 首轮通过 `generate: false`、`store: false` 预热完整输入，让宿主建立可续接的上游 WebSocket；拿到响应 ID 后发送空增量开始生成。
+2. 正常续聊携带上一轮成功完成的 `previous_response_id`，只发送本轮文字和可选参考图，不重复发送历史图片。页面到宿主仍走 HTTP/SSE，宿主负责固定账号并复用上游连接。
+3. 页面保留成功轮次的原始输入与输出项，包括图片、文字和加密推理项。上游明确返回 `previous_response_not_found` 且尚无语义输出时，最多自动恢复一次：用完整历史和本轮消息重新预热，再开始生成。普通错误、超时与取消不会自动重发。
+4. 失败或停止的轮次不进入历史，续接句柄作废；手动重试从已提交历史建立新链。会话固定 Key 与主模型，调整画质或尺寸会重新预热，避免沿用不同请求参数的上下文。
+
+这一做法参考 [Codex 的 WebSocket 增量续接与预热](https://github.com/openai/codex/blob/7f6c0f9387a0a60f396f61cc58f6b38bc98f2473/codex-rs/core/src/client.rs)。这里没有实现 Codex app-server 的 `threadId`；插件负责页面历史与发送顺序，宿主负责连接、账号授权与计费。正常轮次的请求大小主要取决于新增消息，但模型仍需处理累计上下文，增量传输不代表恒定推理时延或免费历史。
+
+图片版本选择只改变预览，不改变对话分支。页面桥每次请求最多 8 MiB；正常增量可在历史超过此值后继续发送，但失效恢复或更改设置可能超过上限，此时明确提示新建对话，不删除或摘要历史。历史接近恢复上限时页面显示提示，累计保留内容达到 32 MiB 后阻止后续轮次，需新建对话释放历史。单次返回图片最多 32 MiB 的 Base64 数据。
+
+当前示例不提供持久化会话列表，刷新或离开图片页会清空会话并取消请求。目录只表示 Key 可选模型，不保证每个模型或账号都支持图片工具与 WebSocket 预热；实际用量按宿主 Key 规则计费。
 
 图片使用宿主允许的 `data:` 地址预览。隔离页不支持下载导航，因此保留浏览器图片保存交互。开发预览只绘制标明「模拟预览」的色块，不调用真实模型。
 
@@ -115,7 +124,7 @@ curl "$CPR_BASE_URL/v1/images/edits" \
 
 - 在基础示例中发送请求，核对输入、输出、模型、Token 与执行记录；未带标记的请求保持原行为。
 - 在文本工作台生成、取消、继续调整，保存后重新打开，并验证多页面保存冲突。
-- 在图片工作台验证生图、三轮上下文续改、文字回复、版本回看、参考图、取消、错误后重试与明暗主题；切换页面后确认请求结束。
+- 在图片工作台验证生图、三轮增量续改、连接失效恢复、文字回复、版本回看、参考图、取消、错误后重试与明暗主题；切换页面后确认请求结束。
 - 读取文本网页，检查重定向、非文本响应和网络失败的提示。
 - 执行 `codex-proxy-rs plugin <实例 ID> ping`；自定义认证按接入指南在独立测试环境验证。
 - WebSocket 观察需要实际 WebSocket 请求；HTTP/SSE 成功不能证明它已生效。

@@ -5,16 +5,23 @@ function nullableNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null
 }
 
-function errorFromPayload(value: unknown, fallback: string): Error {
-  if (isRecord(value)) {
-    if (typeof value.message === 'string')
-      return new Error(value.message)
-    if (isRecord(value.error) && typeof value.error.message === 'string')
-      return new Error(value.error.message)
-    if (isRecord(value.response) && isRecord(value.response.error) && typeof value.response.error.message === 'string')
-      return new Error(value.response.error.message)
+export class ModelResponseError extends Error {
+  constructor(message: string, readonly code?: string) {
+    super(message)
+    this.name = 'ModelResponseError'
   }
-  return new Error(fallback)
+}
+
+function errorFromPayload(value: unknown, fallback: string): Error {
+  const error = isRecord(value) && isRecord(value.error)
+    ? value.error
+    : isRecord(value) && isRecord(value.response) && isRecord(value.response.error)
+      ? value.response.error
+      : value
+  return new ModelResponseError(
+    isRecord(error) && typeof error.message === 'string' ? error.message : fallback,
+    isRecord(error) && typeof error.code === 'string' ? error.code : undefined,
+  )
 }
 
 export function outputText(value: Record<string, unknown>): string {
