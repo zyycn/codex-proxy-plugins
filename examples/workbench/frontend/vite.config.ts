@@ -1,49 +1,35 @@
-import { readFile } from 'node:fs/promises'
 import { fileURLToPath, URL } from 'node:url'
 import CodexProxyUI from '@codex-proxy/ui/vite'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
-export default defineConfig(({ mode, command }) => {
+export default defineConfig(({ mode }) => {
   const sourceUi = mode === 'source'
   const uiRoot = new URL('../../../../ui/', import.meta.url)
+
   return {
-    resolve: {
-      alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
-    },
-    define: {
-      'process.env.NODE_ENV': JSON.stringify(command === 'serve' ? 'development' : 'production'),
-    },
+    base: './',
     plugins: [
       vue(),
       tailwindcss(),
       CodexProxyUI({ source: sourceUi ? uiRoot : undefined }),
       {
-        name: 'plugin-page-entry',
-        async generateBundle() {
-          const template = await readFile(new URL('./index.html', import.meta.url), 'utf8')
-          this.emitFile({
-            type: 'asset',
-            fileName: 'index.html',
-            source: template
-              .replace('</head>', '    <link rel="stylesheet" href="./app.css" />\n  </head>')
-              .replace('<script type="module" src="/src/main.ts"></script>', '<script src="./app.js" defer></script>'),
-          })
-        },
+        name: 'plugin-classic-script',
+        // 宿主隔离页只接受经典脚本；HTML 和资源引用仍由 Vite 生成。
+        transformIndexHtml: { order: 'post', handler: html => html.replace('type="module" crossorigin', 'defer') },
       },
     ],
+    resolve: {
+      alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+    },
     build: {
-      outDir: sourceUi ? '.vite/source-dist' : 'dist',
-      lib: {
-        entry: fileURLToPath(new URL('./src/main.ts', import.meta.url)),
-        name: 'Workbench',
-        formats: ['iife'],
-        fileName: () => 'app.js',
-        cssFileName: 'app',
-      },
+      outDir: sourceUi ? 'node_modules/.vite/source-dist' : 'dist',
+      modulePreload: false,
       cssCodeSplit: false,
-      sourcemap: false,
+      rolldownOptions: {
+        output: { format: 'iife', codeSplitting: false, entryFileNames: 'app.js', assetFileNames: 'app.[ext]' },
+      },
     },
   }
 })

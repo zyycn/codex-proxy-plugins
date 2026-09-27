@@ -159,6 +159,31 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
 async function modelResponse(input: Parameters<PluginHost['models']['responses']>[0]): Promise<Response> {
   await delay(140, input.signal)
   const model = typeof input.body.model === 'string' ? input.body.model : 'gpt-preview'
+  const imageTool = Array.isArray(input.body.tools)
+    ? input.body.tools.find(tool => tool.type === 'image_generation')
+    : undefined
+  if (imageTool) {
+    await delay(1200, input.signal)
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = 512
+    const context = canvas.getContext('2d')!
+    context.fillStyle = '#faf8f4'
+    context.fillRect(0, 0, 512, 512)
+    const previousImages = Array.isArray(input.body.input) ? input.body.input.filter(item => item.type === 'image_generation_call').length : 0
+    context.fillStyle = previousImages ? '#d95b52' : '#5085ba'
+    context.fillRect(156, 130, 200, 200)
+    context.fillStyle = '#666'
+    context.textAlign = 'center'
+    context.font = '18px sans-serif'
+    context.fillText('模拟预览 · 不调用模型', 256, 390)
+    const events = [
+      { type: 'response.output_item.done', item: { id: `preview-image-${++sequence}`, type: 'image_generation_call', status: 'completed', result: canvas.toDataURL('image/png').split(',')[1] } },
+      { type: 'response.output_item.done', item: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: previousImages ? '模拟图片已按本轮要求更新' : '模拟图片已生成，可以继续描述修改' }] } },
+      { type: 'response.completed', response: { status: 'completed', output: [] } },
+    ]
+    return new Response(events.map(event => `data: ${JSON.stringify(event)}\n\n`).join(''), { headers: { 'content-type': 'text/event-stream' } })
+  }
   const output = '这份预览结果提炼了原文的主要结论，并保留了关键事实与上下文。\n\n实际安装后，内容会由所选 Key 和模型通过普通 Responses 请求实时生成。'
   const chunks = output.match(/.{1,12}/gs) ?? [output]
   const requestId = `preview-request-${++sequence}`

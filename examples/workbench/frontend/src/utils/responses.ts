@@ -17,7 +17,7 @@ function errorFromPayload(value: unknown, fallback: string): Error {
   return new Error(fallback)
 }
 
-function outputText(value: Record<string, unknown>): string {
+export function outputText(value: Record<string, unknown>): string {
   if (typeof value.output_text === 'string')
     return value.output_text
   if (!Array.isArray(value.output))
@@ -35,13 +35,7 @@ function outputText(value: Record<string, unknown>): string {
   return parts.join('')
 }
 
-function resultFromResponse(value: unknown, streamedText: string): ModelResult {
-  if (!isRecord(value))
-    throw new Error('模型返回的响应格式无效')
-  if (value.status === 'error' || value.status === 'failed' || value.status === 'incomplete'
-    || value.status === 'cancelled' || value.status === 'canceled') {
-    throw errorFromPayload(value, '模型生成未完成')
-  }
+function resultFromResponse(value: Record<string, unknown>, streamedText: string): ModelResult {
   const usage = isRecord(value.usage) ? value.usage : {}
   return {
     text: streamedText || outputText(value),
@@ -78,16 +72,31 @@ function eventData(block: string): string | null {
 }
 
 export async function consumeModelResponse(response: Response, options: ConsumeOptions): Promise<ModelResult> {
+  let streamedText = ''
+  const value = await consumeResponseDocument(response, {
+    onTextDelta(delta) {
+      streamedText += delta
+      options.onDelta(delta)
+    },
+  })
+  const result = resultFromResponse(value, streamedText)
+  if (!streamedText && result.text)
+    options.onDelta(result.text)
+  return result
+}
+
+// 文本和图片共用 Responses 的读取、终态校验与取消清理。
+export async function consumeResponseDocument(response: Response, options: {
+  onTextDelta?: (delta: string) => void
+  onOutputItem?: (item: Record<string, unknown>) => void
+} = {}): Promise<Record<string, unknown>> {
   if (!response.ok)
     throw await responseError(response)
 
   const type = response.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase()
   if (type === 'application/json' || type?.endsWith('+json')) {
     const value: unknown = await response.json()
-    const result = resultFromResponse(value, '')
-    if (result.text)
-      options.onDelta(result.text)
-    return result
+    return completedDocument(value)
   }
   if (type !== 'text/event-stream')
     throw new Error('模型返回了不支持的内容类型')
@@ -97,7 +106,6 @@ export async function consumeModelResponse(response: Response, options: ConsumeO
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
-  let text = ''
   let completed: unknown
 
   function consumeBlock(block: string) {
@@ -118,8 +126,13 @@ export async function consumeModelResponse(response: Response, options: ConsumeO
     if (event.type === 'response.output_text.delta') {
       if (typeof event.delta !== 'string')
         throw new Error('模型返回了无效的文本增量')
-      text += event.delta
-      options.onDelta(event.delta)
+      options.onTextDelta?.(event.delta)
+      return
+    }
+    if (event.type === 'response.output_item.done') {
+      if (!isRecord(event.item))
+        throw new Error('模型返回了无效的输出项')
+      options.onOutputItem?.(event.item)
       return
     }
     if (event.type === 'response.completed') {
@@ -170,5 +183,13 @@ export async function consumeModelResponse(response: Response, options: ConsumeO
 
   if (completed === undefined)
     throw new Error('模型流在完成事件前结束')
-  return resultFromResponse(completed, text)
+  return completedDocument(completed)
+}
+
+function completedDocument(value: unknown): Record<string, unknown> {
+  if (!isRecord(value))
+    throw new Error('模型返回的响应格式无效')
+  if (['error', 'failed', 'incomplete', 'cancelled', 'canceled'].includes(String(value.status)))
+    throw errorFromPayload(value, '模型生成未完成')
+  return value
 }

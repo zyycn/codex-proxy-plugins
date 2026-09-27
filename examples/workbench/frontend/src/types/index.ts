@@ -1,7 +1,7 @@
 import type { Component, Ref } from 'vue'
 import type { Evidence, WorkbenchSnapshot } from '../api'
 
-export type WorkbenchView = 'text' | 'examples'
+export type WorkbenchView = 'text' | 'images' | 'examples'
 
 export interface ResponseFacts {
   requestId: string | null
@@ -84,4 +84,15 @@ export type GenerationPhase = 'idle' | 'requesting' | 'streaming' | 'done' | 'st
 export interface UseTextWorkbenchOptions {
   snapshot: Ref<WorkbenchSnapshot | undefined>
   refreshSnapshot: () => Promise<void> | void
+}
+
+export interface ImageTurn {
+  id: number
+  prompt: string
+  attachment: string
+  attachmentName: string
+  status: 'running' | 'complete' | 'error' | 'cancelled'
+  text: string
+  imageUrl: string
+  error: string
 }

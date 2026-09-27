@@ -1,12 +1,13 @@
 # 插件工作台
 
-一个可安装的完整插件示例：体验请求处理与管理扩展，也可以用它完成摘要、翻译、改写等文本任务。
+一个可安装的完整插件示例：体验请求处理与管理扩展，也可以用它完成摘要、翻译、改写，以及生成和编辑图片。
 
 | 页面 | 功能 |
 | --- | --- |
 | 基础示例 | 文字转大写、追踪一次请求、调用插件接口 |
 | 接入指南 | 终端命令、自定义客户端认证 |
 | 文本工作台 | 粘贴文本或读取网页，流式生成、取消、继续调整，保存最近 8 条任务 |
+| 图片工作台 | 自然语言生图、多轮续改、图片版本、参考图与取消 |
 
 安装、开发环境、检查和打包命令统一见[仓库 README](../../README.md)。独立预览使用模拟数据；安装到兼容宿主后才能验证实际能力。
 
@@ -18,6 +19,8 @@
 | --- | --- | --- |
 | 简单管理接口 | [`management/workbench.rs`](backend/src/management/workbench.rs) 的 `echo` | [`api/modules/echo.ts`](frontend/src/api/modules/echo.ts) |
 | 改写请求正文 | [`request/middleware.rs`](backend/src/request/middleware.rs) | 基础示例「文字转大写」 |
+| 图片交互 | 宿主已有 Responses 页面桥 | [`images.ts`](frontend/src/api/modules/images.ts)、[`useImageWorkbench.ts`](frontend/src/composables/useImageWorkbench.ts) |
+| 图片上传协议适配 | [`request/image_edit.rs`](backend/src/request/image_edit.rs) | HTTP 客户端调用 `/v1/images/edits` |
 | 模型路由、账号选择 | [`request/routing.rs`](backend/src/request/routing.rs)、[`scheduler.rs`](backend/src/request/scheduler.rs) | 基础示例「追踪一次请求」 |
 | 请求、用量、WebSocket 观察 | [`request/observer.rs`](backend/src/request/observer.rs) | [`useExampleRunner.ts`](frontend/src/composables/useExampleRunner.ts) |
 | 保存状态、读取网页 | [`management/tasks.rs`](backend/src/management/tasks.rs)、[`text.rs`](backend/src/management/text.rs) | [`useTextWorkbench.ts`](frontend/src/composables/useTextWorkbench.ts) |
@@ -41,7 +44,7 @@
 
 [`frontend/src/api/`](frontend/src/api/) 按业务列出路由、参数与响应校验。`request({ url, method, data })` 接收插件的相对路由，由 `window.codexProxyPlugin.request` 交给宿主；页面不直接访问宿主 HTTP 接口、管理 Cookie 或 Key 明文。
 
-文本生成使用宿主桥的 `models.responses`，保留 JSON/SSE 响应与取消信号，进入宿主正常的模型请求链。Key 和模型选择分别使用非秘密 Key 列表及模型目录。
+文本和图片生成使用宿主桥的 `models.responses`，保留 JSON/SSE 响应与取消信号，进入宿主正常的模型请求链。Key 和模型选择分别使用非秘密 Key 列表及模型目录。
 
 Vue 页面保留 SFC，使用 TypeScript 和 `@codex-proxy/ui`。宿主负责页面标题、主题同步和整页滚动，插件根容器通过 `min-height: inherit` 延续最小高度。独立预览位于 [`preview/`](frontend/src/preview/)，包内资源由 [`vite.config.ts`](frontend/vite.config.ts) 构建。
 
@@ -52,6 +55,7 @@ Vue 页面保留 SFC，使用 TypeScript 和 `@codex-proxy/ui`。宿主负责页
 | 行为 | 触发条件与边界 |
 | --- | --- |
 | 演示请求处理 | 仅处理带 `metadata.capability_workbench: "true"` 的请求；大写转换还需 `capability_workbench_uppercase: "true"`。两者都是字符串，转发上游前移除演示字段 |
+| 图片编辑适配 | request 中间件自动处理 OpenAI `/v1/images/edits` 的 multipart 上传，不需要演示标记；JSON 请求保持原样 |
 | 文本工作台 | 不发送演示标记，普通文本生成与继续调整保持原始输入 |
 | 路由与调度 | 使用所选 Key 可用的内置 OpenAI/xAI 模型；平台候选唯一时确认平台，多个候选交由宿主选路。按在途数、失败率和权重选择账号，宿主复核资格与租约 |
 | 网页取文 | 使用宿主受管网络，接收无凭据的 HTTP(S) 地址，不跟随重定向，保留最多 256 KiB 的 UTF-8 文本 |
@@ -59,6 +63,35 @@ Vue 页面保留 SFC，使用 TypeScript 和 `@codex-proxy/ui`。宿主负责页
 | 自定义认证 | 仅供独立测试环境演示；启用认证绑定并将示例 principal 映射到已有测试 Key 后使用 |
 
 权限包括 `network`（网页取文）、`models`（Key、模型目录与模型调用）、`requests`（请求处理与观察）、`public_endpoints`（公开的 `web/app.css` 示例资源）。日志和自身私有状态无需额外权限。插件以 `trustedProcess` 运行，与宿主具有相同系统身份。
+
+## 图片工作台
+
+选择有图片工具权限的 Key 与 OpenAI 主模型，直接描述想要的图片；生成后继续发送「换成红色」「背景改回最开始的颜色」等消息，无需切换编辑模式或重新上传结果。左侧画布展示选中的图片，底部缩略图可回看每版，右侧保留每轮指令和模型回复。参考图是可选附件，支持 PNG/JPEG/WebP，单张最多 4 MiB。图片设置可调整画质与尺寸，每次最多生成一张，也支持只回复文字。
+
+页面经 `models.responses` 调用 `image_generation` 工具，工具模型为 `gpt-image-2`，输出 PNG，`action: auto` 由模型根据会话决定生成或编辑。插件保留成功轮次的原始输入与输出项，包括图片工具输出、文字和加密推理项，并按顺序随下一轮重放；使用 `store: false`，不依赖上游持久化的 response ID。这是完整的页面会话上下文，不是仅把上一张结果重新当作附件发送。
+
+会话期间固定 Key 与模型，新建对话后可以重新选择。失败或停止的轮次不进入上下文，可重试最后一轮；图片版本选择只改变预览，不改变对话分支。页面桥正文上限为 8 MiB，达到上限时提示新建对话，不自动删除历史。当前示例不提供持久化会话列表，刷新或离开图片页会清空会话并取消请求。目录只表示 Key 可选模型，不保证每个模型或账号都支持图片工具；实际用量按宿主 Key 规则计费。
+
+图片使用宿主允许的 `data:` 地址预览。隔离页不支持下载导航，因此保留浏览器图片保存交互。开发预览只绘制标明「模拟预览」的色块，不调用真实模型。
+
+这条页面调用用于展示生图／编辑交互；下面的 multipart 中间件用于外部 Images 客户端，两者是独立示例，页面成功不能代替中间件适配验证。
+
+## 图片编辑适配示例
+
+启用工作台的 `middleware` / `request` 绑定，并确认请求在绑定范围内。客户端上传的 `image` 或 `image[]` 文件会转换成 `images: [{ image_url: "data:image/png;base64,…" }]`，然后通过一次 `next` 交给宿主原有 Images 路径。账号选择、OAuth 和上游响应仍由宿主处理；适配自身只使用现有 `requests` 权限，不读取账号凭据、不自行请求上游。
+
+```bash
+curl "$CPR_BASE_URL/v1/images/edits" \
+  -H "Authorization: Bearer $CPR_API_KEY" \
+  -F 'model=gpt-image-2' \
+  -F 'prompt=把蓝色方块改成红色，保留白色背景' \
+  -F 'image=@input.png;type=image/png' \
+  -F 'n=1' -F 'quality=low' -F 'size=1024x1024'
+```
+
+这是最小适配示例：支持 PNG/JPEG/WebP、最多 16 张图片、multipart 正文最多 16 MiB、单个文本字段最多 32 KiB。文本参数支持 `model`、`prompt`、`n`、`size`、`quality`、`background`；可指定 `response_format=b64_json`。`model`、`prompt` 和图片必填。mask、URL 输出及其他未支持参数会返回 HTTP 400，避免静默丢弃编辑条件。
+
+成功响应沿用上游的 `data[].b64_json`；下游错误原样交回，不额外重试。工作台记录 `image_edit_multipart_adapted` 和下游状态，不记录图片、提示词或凭据。原生 JSON、其他路径和 attempt 阶段不转换。
 
 ## 管理接口
 
@@ -82,6 +115,7 @@ Vue 页面保留 SFC，使用 TypeScript 和 `@codex-proxy/ui`。宿主负责页
 
 - 在基础示例中发送请求，核对输入、输出、模型、Token 与执行记录；未带标记的请求保持原行为。
 - 在文本工作台生成、取消、继续调整，保存后重新打开，并验证多页面保存冲突。
+- 在图片工作台验证生图、三轮上下文续改、文字回复、版本回看、参考图、取消、错误后重试与明暗主题；切换页面后确认请求结束。
 - 读取文本网页，检查重定向、非文本响应和网络失败的提示。
 - 执行 `codex-proxy-rs plugin <实例 ID> ping`；自定义认证按接入指南在独立测试环境验证。
 - WebSocket 观察需要实际 WebSocket 请求；HTTP/SSE 成功不能证明它已生效。

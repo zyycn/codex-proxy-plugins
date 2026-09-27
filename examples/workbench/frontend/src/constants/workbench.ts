@@ -1,6 +1,6 @@
 import type { TaskKind } from '../api'
 import type { GenerationPhase, UiSegmentedOption } from '../types'
-import { Blocks, BookOpenText } from '@lucide/vue'
+import { Blocks, BookOpenText, Image } from '@lucide/vue'
 
 export const taskOptions: UiSegmentedOption[] = [
   { label: '摘要', value: 'summarize' },
@@ -26,6 +26,7 @@ export const sourceKinds = new Set(['text', 'url'])
 
 export const workbenchViews: UiSegmentedOption[] = [
   { label: '文本工作台', value: 'text', icon: BookOpenText },
+  { label: '图片工作台', value: 'images', icon: Image },
   { label: '基础示例', value: 'examples', icon: Blocks },
 ]
 

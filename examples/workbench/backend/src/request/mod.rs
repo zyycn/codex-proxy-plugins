@@ -1,3 +1,4 @@
+mod image_edit;
 mod middleware;
 mod observer;
 mod routing;

@@ -4,7 +4,7 @@
   "displayName": "插件工作台",
   "publisher": "codex-proxy",
   "version": "0.1.15",
-  "description": "通过请求处理与文本工作流，体验内置模型和管理扩展",
+  "description": "通过文本、图片工作流和请求处理，体验内置模型与管理扩展",
   "license": "Apache-2.0",
   "author": "Codex Proxy 贡献者",
   "engines": {

@@ -17,6 +17,9 @@ pub(crate) async fn middleware(
     scope: &ScopeTracker,
     call: MiddlewareCall,
 ) -> Result<MiddlewareResponse, PluginFault> {
+    if super::image_edit::matches(&call.request) {
+        return super::image_edit::handle(evidence, call).await;
+    }
     let request_id = call.context.request_id.clone();
     if body_has_scope_marker(&call.request.body)
         && let Some(request_id) = &request_id

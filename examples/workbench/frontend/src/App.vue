@@ -6,6 +6,7 @@ import { shallowRef } from 'vue'
 import WorkbenchNavigation from './components/WorkbenchNavigation.vue'
 import { useWorkbenchData } from './composables/useWorkbenchData'
 import BasicExamples from './views/examples/index.vue'
+import ImageWorkbench from './views/image-workbench/index.vue'
 import TextWorkbench from './views/text-workbench/index.vue'
 
 defineProps<{
@@ -19,11 +20,12 @@ const { snapshot, loading, error, refresh } = useWorkbenchData()
 <template>
   <main
     class="flex min-w-0 flex-col gap-4 font-sans text-cp-text"
-    :style="{ minHeight: preview ? '100dvh' : 'inherit' }"
+    :class="{ 'md:h-[var(--cp-plugin-viewport-height,100dvh)]': view === 'images' }"
+    :style="{ minHeight: view === 'images' ? undefined : preview ? '100dvh' : 'inherit' }"
   >
     <div
       v-if="preview"
-      class="flex flex-wrap items-center justify-between gap-2 rounded-cp bg-cp-warning-container px-3 py-2 text-cp-sm text-cp-warning-on-container"
+      class="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-cp bg-cp-warning-container px-3 py-2 text-cp-sm text-cp-warning-on-container"
       role="note"
     >
       <span class="inline-flex items-center gap-2">
@@ -32,7 +34,7 @@ const { snapshot, loading, error, refresh } = useWorkbenchData()
       </span>
     </div>
 
-    <WorkbenchNavigation v-model="view" />
+    <WorkbenchNavigation v-model="view" class="shrink-0" />
     <TextWorkbench
       v-show="view === 'text'"
       :snapshot="snapshot"
@@ -46,6 +48,12 @@ const { snapshot, loading, error, refresh } = useWorkbenchData()
       :loading="loading"
       :error="error"
       :refresh="refresh"
+    />
+    <ImageWorkbench
+      v-if="view === 'images'"
+      :snapshot="snapshot"
+      :loading="loading"
+      :error="error"
     />
   </main>
   <BaseToast />
