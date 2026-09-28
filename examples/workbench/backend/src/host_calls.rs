@@ -1,14 +1,13 @@
 use gateway_plugin_sdk::{
     ErrorCode, PluginFault,
     call::host::{
-        AffinityLookupRequest, AffinityLookupResult, HttpRequest, HttpResponse, KeyListRequest,
-        KeyListResult, LogRequest, LogResult, ModelListRequest, ModelListResult, StateGetRequest,
-        StateGetResult, StatePutRequest, StatePutResult, StreamClose, StreamRead,
+        AffinityLookupRequest, AffinityLookupResult, KeyListRequest, KeyListResult, LogRequest,
+        LogResult, ModelListRequest, ModelListResult, StateGetRequest, StateGetResult,
+        StatePutRequest, StatePutResult,
     },
     client::{HostClient, SessionError},
 };
 use serde::{Serialize, de::DeserializeOwned};
-use serde_json::{Map, Value};
 
 pub(crate) async fn list_keys(
     host: &HostClient,
@@ -81,53 +80,6 @@ pub(crate) async fn affinity(
     )
     .await
     .map(|(result, _)| result)
-}
-
-pub(crate) async fn open_http(
-    host: &HostClient,
-    request: &HttpRequest,
-) -> Result<HttpResponse, PluginFault> {
-    let (response, payload): (HttpResponse, Vec<u8>) =
-        metadata(host, "host.http.do_stream", request).await?;
-    if !payload.is_empty() || response.stream.is_none() {
-        return Err(invalid_callback());
-    }
-    Ok(response)
-}
-
-pub(crate) async fn read_http(
-    host: &HostClient,
-    stream: String,
-    maximum_bytes: u32,
-) -> Result<(bool, Vec<u8>), PluginFault> {
-    let (result, payload): (Value, Vec<u8>) = metadata(
-        host,
-        "host.http.stream_read",
-        &StreamRead {
-            stream,
-            maximum_bytes,
-        },
-    )
-    .await?;
-    let eof = result
-        .as_object()
-        .filter(|value| value.len() == 1)
-        .and_then(|value| value.get("eof"))
-        .and_then(Value::as_bool)
-        .ok_or_else(invalid_callback)?;
-    if eof && !payload.is_empty() {
-        return Err(invalid_callback());
-    }
-    Ok((eof, payload))
-}
-
-pub(crate) async fn close_http(host: &HostClient, stream: String) -> Result<(), PluginFault> {
-    let (result, payload): (Map<String, Value>, Vec<u8>) =
-        metadata(host, "host.http.stream_close", &StreamClose { stream }).await?;
-    if !result.is_empty() || !payload.is_empty() {
-        return Err(invalid_callback());
-    }
-    Ok(())
 }
 
 async fn metadata<I, O>(

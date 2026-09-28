@@ -2,10 +2,7 @@ use super::{
     response::{ApiError, ApiResult, json_reply},
     validation::decode_json,
 };
-use crate::{
-    evidence::{EvidenceInput, EvidenceLog},
-    host_calls,
-};
+use crate::evidence::{EvidenceInput, EvidenceLog};
 use gateway_plugin_sdk::{
     ErrorCode, PluginFault,
     call::{host::HttpRequest, management::ManagementRequest},
@@ -82,28 +79,27 @@ async fn fetch_text(
     // 页内定位不参与 HTTP 请求，移除后再交给宿主校验目标地址。
     url.set_fragment(None);
     let normalized_url = url.to_string();
-    let response = host_calls::open_http(
-        host,
-        &HttpRequest {
-            method: "GET".to_owned(),
-            url: normalized_url.clone(),
-            headers: vec![(
-                "accept".to_owned(),
-                "text/plain, text/html, application/json;q=0.8".to_owned(),
-            )],
-        },
-    )
-    .await
-    .map_err(network_error)?;
+    let response = host
+        .http(
+            HttpRequest {
+                method: "GET".to_owned(),
+                url: normalized_url.clone(),
+                headers: vec![(
+                    "accept".to_owned(),
+                    "text/plain, text/html, application/json;q=0.8".to_owned(),
+                )],
+            },
+            Vec::new(),
+        )
+        .await
+        .map_err(network_error)?;
     let status = response.status;
     let content_type = response
         .headers
         .iter()
         .find(|(name, _)| name.eq_ignore_ascii_case("content-type"))
         .map(|(_, value)| value.clone());
-    let stream = response
-        .stream
-        .ok_or_else(|| ApiError::new(502, "invalid_response", "宿主网络响应未提供数据流"))?;
+    let mut stream = response.body;
     let source_error = if !(200..300).contains(&status) {
         Some(ApiError::new(
             502,
@@ -124,25 +120,17 @@ async fn fetch_text(
         None
     };
     if let Some(error) = source_error {
-        let _ = host_calls::close_http(host, stream).await;
+        let _ = stream.close().await;
         return Err(error);
     }
     let mut body = Vec::new();
     let mut truncated = false;
-    loop {
-        let (eof, chunk) = host_calls::read_http(host, stream.clone(), 64 * 1024)
-            .await
-            .map_err(network_error)?;
+    while let Some(chunk) = stream.read().await.map_err(network_error)? {
         body.extend_from_slice(&chunk);
         if body.len() > MAXIMUM_FETCH_BYTES {
             truncated = true;
             body.truncate(MAXIMUM_FETCH_BYTES);
-            host_calls::close_http(host, stream)
-                .await
-                .map_err(network_error)?;
-            break;
-        }
-        if eof {
+            stream.close().await.map_err(network_error)?;
             break;
         }
     }
