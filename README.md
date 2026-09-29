@@ -34,7 +34,7 @@
 3. 启用自动准备的默认配置，从「扩展页」打开「插件工作台」。模型示例需要选择已有的可用 Key 和模型。
 
 > [!IMPORTANT]
-> 插件接口仍处于实验阶段，发行包标记为 Pre-release。当前源码要求宿主支持清单 v2、协议 v2、中间件 v3，并满足 `>=3.17.0, <4.0.0`，以使用图片会话所需的原生续接能力。通过 GitHub 来源安装时，需要明确填写发行标签并允许预发行。
+> 当前工作台要求宿主支持清单 v2、协议 v2、中间件 v3，并满足 `>=3.17.0, <4.0.0`。宿主 v3.17.0 正式包只支持旧协议，不能安装本版；可使用宿主提交 `b37d7901441e123cb9126a6f9af4ff3321548d24` 或后续兼容构建。通过 GitHub 来源安装正式版时，无需允许预发行；使用预发行版时需明确填写标签并允许预发行。
 
 安装工作台意味着完整信任，清单不声明访问权限。插件进程与宿主使用相同系统身份；运行模型示例会产生真实用量。各能力的触发条件见[示例说明](examples/workbench/README.md#能力与边界)。
 
@@ -63,7 +63,7 @@ dist/             安装包与校验文件（不入库）
 
 从 [`app.rs`](examples/workbench/backend/src/app.rs) 查看处理器如何组合，再按[源码导航](examples/workbench/README.md#从哪里读起)选择需要的能力。开发自己的插件时，只保留需要的处理器及对应清单声明。
 
-SDK 与打包 CLI 固定到同一宿主提交 `2952224b3a9c20bb4fb42ad14ae2077617d0e514`，UI 使用 `v0.3.0`，实际依赖由各自锁文件固定；无需检出宿主或组件库。需要联合修改时，使用宿主的[源码联调入口](https://github.com/zyycn/codex-proxy-rs/blob/main/docs/development.md)，正式构建仍使用锁定依赖。
+SDK 与打包 CLI 固定到同一宿主提交 `b37d7901441e123cb9126a6f9af4ff3321548d24`，UI 使用 `v0.3.0`，实际依赖由各自锁文件固定；无需检出宿主或组件库。需要联合修改时，使用宿主的[源码联调入口](https://github.com/zyycn/codex-proxy-rs/blob/main/docs/development.md)，正式构建仍使用锁定依赖。
 
 在本仓库根目录执行检查：
 
@@ -80,7 +80,7 @@ RUST_MIN_STACK=16777216 cargo test --manifest-path examples/workbench/backend/Ca
 安装以下固定提交的打包工具，在仓库根目录运行：
 
 ```bash
-cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev 2952224b3a9c20bb4fb42ad14ae2077617d0e514 codex-proxy-plugin-cli --root .tools
+cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev b37d7901441e123cb9126a6f9af4ff3321548d24 codex-proxy-plugin-cli --root .tools
 PLUGIN_CLI="$PWD/.tools/bin/cpr-plugin" bash scripts/package
 ```
 
@@ -92,7 +92,7 @@ PLUGIN_CLI="$PWD/.tools/bin/cpr-plugin" bash scripts/package aarch64-unknown-lin
 
 支持 Linux x86_64、Linux aarch64、macOS aarch64；交叉构建需准备对应 Rust target 和链接工具。已安装插件使用包内资源，修改源码后需重新构建、打包并切换版本。
 
-发行时同步 `plugin.json` 的版本和 `release/notes.md`，从 `main` 推送对应的 `v<插件版本>` 标签。[发布工作流](.github/workflows/release.yml)在检查通过后生成三个平台的安装包与校验文件。
+发行时同步 `plugin.json` 的版本和 `release/notes.md`，从 `main` 推送对应的 `v<插件版本>` 标签。[发布工作流](.github/workflows/release.yml)在检查通过后生成三个平台的安装包与校验文件。不带预发行后缀的版本发布为正式版并更新 Latest，带 `-alpha.N`、`-beta.N` 或 `-rc.N` 后缀的版本发布为 Pre-release。
 
 ## 文档
 
@@ -100,6 +100,6 @@ PLUGIN_CLI="$PWD/.tools/bin/cpr-plugin" bash scripts/package aarch64-unknown-lin
 | --- | --- |
 | 阅读示例与管理接口 | [插件工作台](examples/workbench/README.md) |
 | 安装、配置与管理版本 | [宿主插件使用说明](https://github.com/zyycn/codex-proxy-rs/blob/main/docs/plugins.md) |
-| 编写 Rust 插件 | [SDK](https://github.com/zyycn/codex-proxy-rs/blob/2952224b3a9c20bb4fb42ad14ae2077617d0e514/backend/crates/gateway-plugin/sdk/README.md) · [清单](https://github.com/zyycn/codex-proxy-rs/blob/2952224b3a9c20bb4fb42ad14ae2077617d0e514/backend/crates/gateway-plugin/sdk/docs/manifest.md) · [能力合同](https://github.com/zyycn/codex-proxy-rs/blob/2952224b3a9c20bb4fb42ad14ae2077617d0e514/backend/crates/gateway-plugin/sdk/docs/capabilities.md) |
-| 自定义打包流程 | [插件 CLI](https://github.com/zyycn/codex-proxy-rs/blob/2952224b3a9c20bb4fb42ad14ae2077617d0e514/backend/apps/plugin-cli/README.md) |
+| 编写 Rust 插件 | [SDK](https://github.com/zyycn/codex-proxy-rs/blob/b37d7901441e123cb9126a6f9af4ff3321548d24/backend/crates/gateway-plugin/sdk/README.md) · [清单](https://github.com/zyycn/codex-proxy-rs/blob/b37d7901441e123cb9126a6f9af4ff3321548d24/backend/crates/gateway-plugin/sdk/docs/manifest.md) · [能力合同](https://github.com/zyycn/codex-proxy-rs/blob/b37d7901441e123cb9126a6f9af4ff3321548d24/backend/crates/gateway-plugin/sdk/docs/capabilities.md) |
+| 自定义打包流程 | [插件 CLI](https://github.com/zyycn/codex-proxy-rs/blob/b37d7901441e123cb9126a6f9af4ff3321548d24/backend/apps/plugin-cli/README.md) |
 | 编写管理页面 | [UI 组件库](https://github.com/zyycn/codex-proxy-ui) · [宿主主题约定](https://github.com/zyycn/codex-proxy-rs/blob/main/docs/theme.md) |

@@ -62,7 +62,7 @@ jobs:
           workspaces: examples/workbench/backend -> target
       - run: pnpm --dir examples/workbench/frontend install --frozen-lockfile
       - name: Install pinned package tool
-        run: cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev 2952224b3a9c20bb4fb42ad14ae2077617d0e514 codex-proxy-plugin-cli
+        run: cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev b37d7901441e123cb9126a6f9af4ff3321548d24 codex-proxy-plugin-cli
       - name: Build installable package
         env:
           PLUGIN_TARGET: ${{ matrix.target }}
@@ -88,12 +88,16 @@ jobs:
           pattern: plugin-*
           path: dist
           merge-multiple: true
-      - name: Publish plugin preview
+      - name: Publish plugin release
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
         run: |
+          release_flags=(--latest)
+          if [[ "$RELEASE_TAG" == *-* ]]; then
+            release_flags=(--prerelease --latest=false)
+          fi
           gh release create "$RELEASE_TAG" dist/*.tar.gz dist/*.sha256 \
             --repo "$GITHUB_REPOSITORY" --verify-tag \
             --title "插件工作台 $RELEASE_TAG" --notes-file release/notes.md \
-            --prerelease --latest=false
+            "${release_flags[@]}"
