@@ -60,6 +60,7 @@ fn encode(
     let payload = serde_json::to_vec(body)
         .map_err(|_| PluginFault::new(ErrorCode::Fault, "管理接口响应编码失败"))?;
     Ok(TypedReply::new(ManagementResponse {
+        headers: Vec::new(),
         status,
         content_type: JSON_CONTENT_TYPE.to_owned(),
     })

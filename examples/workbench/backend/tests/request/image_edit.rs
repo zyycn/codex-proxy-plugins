@@ -5,10 +5,10 @@ use serde_json::{Value, json};
 use crate::support::{Peer, no_callback, result};
 
 fn head() -> Value {
-    json!({"request_id":"test-request","mount":"request","operation":"generate_image","protocol":"openai",
-        "endpoint":"/v1/images/edits","transport":"http_json","headers":[
-            {"name":"Content-Type","value":b"multipart/form-data; boundary=\"test-boundary\"".to_vec()}
-        ],"body_visible":true})
+    json!({"request_id":"test-request","settings_sources":null,"client_key_id":"test-key","account_group_ids":[],"mount":"request","operation":"generate_image","protocol":"openai",
+    "endpoint":"/v1/images/edits","transport":"http_json","headers":[
+        {"name":"Content-Type","value":b"multipart/form-data; boundary=\"test-boundary\"".to_vec()}
+    ]})
 }
 
 fn form(fields: &[(&str, &str)], images: &[(&str, &[u8])]) -> Vec<u8> {
@@ -71,8 +71,8 @@ async fn image_edit_converts_binary_uploads_and_preserves_downstream_response() 
 }
 
 #[tokio::test]
-async fn image_edit_leaves_json_other_endpoints_and_hidden_bodies_untouched() {
-    for case in ["json", "generation", "hidden", "attempt"] {
+async fn image_edit_leaves_json_other_endpoints_and_attempts_untouched() {
+    for case in ["json", "generation", "attempt"] {
         let mut params = head();
         let mut body = valid_form();
         let mut stage = Stage::Request;
@@ -82,10 +82,6 @@ async fn image_edit_leaves_json_other_endpoints_and_hidden_bodies_untouched() {
                 body = br#"{ "images": [] }"#.to_vec();
             }
             "generation" => params["endpoint"] = json!("/v1/images/generations"),
-            "hidden" => {
-                params["body_visible"] = json!(false);
-                body.clear();
-            }
             "attempt" => {
                 params["mount"] = json!("attempt");
                 params["attempt_index"] = json!(1);

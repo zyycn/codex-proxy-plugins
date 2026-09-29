@@ -4,7 +4,7 @@ use gateway_plugin_sdk::{
     call::middleware::{
         MiddlewareBodyFrame, MiddlewareBodyFraming, MiddlewareHeader, MiddlewareMount,
     },
-    client::{MiddlewareBody, MiddlewareCall, MiddlewareRequest, MiddlewareResponse},
+    client::{MiddlewareBody, MiddlewareRequest, MiddlewareResponse, RequestCall},
 };
 use serde_json::{Map, Value, json};
 
@@ -26,7 +26,6 @@ pub(super) fn matches(request: &MiddlewareRequest) -> bool {
     request.head.mount == MiddlewareMount::Request
         && request.head.protocol == "openai"
         && request.head.endpoint == "/v1/images/edits"
-        && request.head.body_visible
         && content_type(request).is_some_and(|value| {
             value
                 .split(';')
@@ -39,7 +38,7 @@ pub(super) fn matches(request: &MiddlewareRequest) -> bool {
 
 pub(super) async fn handle(
     evidence: &EvidenceLog,
-    mut call: MiddlewareCall,
+    mut call: RequestCall,
 ) -> Result<MiddlewareResponse, PluginFault> {
     let body = match convert(
         content_type(&call.request).unwrap_or_default(),

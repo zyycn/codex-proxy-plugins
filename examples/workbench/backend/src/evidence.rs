@@ -91,7 +91,7 @@ const EXAMPLES: &[ExampleDefinition] = &[
     ExampleDefinition {
         id: "request-observation",
         title: "请求观察",
-        capabilities: &["request_lifecycle", "usage", "web_socket_observer"],
+        capabilities: &["observer"],
         trigger: "完成一次模型请求，并单独发送真实 WebSocket 请求",
     },
     ExampleDefinition {

@@ -49,7 +49,6 @@ impl Peer {
                 generation: 1,
                 incarnation: "test-session".to_owned(),
                 configuration: json!({}),
-                permissions: manifest.permissions.into_iter().collect(),
                 contributes: manifest.contributes,
             },
         }))
@@ -95,6 +94,7 @@ impl Peer {
                     incarnation: "test-session".to_owned(),
                     stage,
                     timeout_ms: 10_000,
+                    resource_stream: false,
                     resource_scope_id: "test-scope".to_owned(),
                     request_id: Some("test-request".to_owned()),
                     attempt_id: None,

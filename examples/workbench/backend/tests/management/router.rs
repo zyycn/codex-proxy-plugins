@@ -91,7 +91,7 @@ async fn invalid_management_requests_return_json_without_host_callbacks() {
             .await;
         assert_eq!(
             result(&frame),
-            &json!({"status":status,"content_type":"application/json"})
+            &json!({"status":status,"content_type":"application/json","headers":[]})
         );
         let body: Value = serde_json::from_slice(&frame.payload).unwrap();
         assert_eq!(body["error"]["code"], code, "{method} {path}");

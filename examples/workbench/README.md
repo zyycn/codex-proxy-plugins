@@ -13,7 +13,7 @@
 
 ## 从哪里读起
 
-先读 [`plugin.json`](plugin.json) 和 [`backend/src/app.rs`](backend/src/app.rs)：前者声明插件提供什么、访问什么，后者用 `PluginBuilder` 连接实际处理器。随后只选择需要的能力：
+先读 [`plugin.json`](plugin.json) 和 [`backend/src/app.rs`](backend/src/app.rs)：前者声明插件提供什么，后者用 `PluginBuilder` 连接实际处理器。随后只选择需要的能力：
 
 | 想实现什么 | 后端入口 | 对应页面或调用方 |
 | --- | --- | --- |
@@ -22,7 +22,7 @@
 | 图片交互 | 宿主已有 Responses 页面桥 | [`images.ts`](frontend/src/api/modules/images.ts)、[`imageConversation.ts`](frontend/src/utils/imageConversation.ts)、[`useImageWorkbench.ts`](frontend/src/composables/useImageWorkbench.ts) |
 | 图片上传协议适配 | [`request/image_edit.rs`](backend/src/request/image_edit.rs) | HTTP 客户端调用 `/v1/images/edits` |
 | 模型路由、账号选择 | [`request/routing.rs`](backend/src/request/routing.rs)、[`scheduler.rs`](backend/src/request/scheduler.rs) | 基础示例「追踪一次请求」 |
-| 请求、用量、WebSocket 观察 | [`request/observer.rs`](backend/src/request/observer.rs) | [`useExampleRunner.ts`](frontend/src/composables/useExampleRunner.ts) |
+| `observer` 完成与 WebSocket 事件 | [`request/observer.rs`](backend/src/request/observer.rs) | [`useExampleRunner.ts`](frontend/src/composables/useExampleRunner.ts) |
 | 保存状态、读取网页 | [`management/tasks.rs`](backend/src/management/tasks.rs)、[`text.rs`](backend/src/management/text.rs) | [`useTextWorkbench.ts`](frontend/src/composables/useTextWorkbench.ts) |
 | 终端命令、客户端认证 | [`command.rs`](backend/src/command.rs)、[`authentication.rs`](backend/src/authentication.rs) | 接入指南中的命令 |
 
@@ -34,7 +34,7 @@
 - [`evidence.rs`](backend/src/evidence.rs)：保存最近 64 条执行记录，供页面展示能力状态。只实现业务功能的插件通常不需要这套演示记录。
 - [`tests/`](backend/tests/)：通过公开 SDK 会话验证处理器，模拟宿主资源回调。
 
-复制示例开发新插件时，同步修改清单身份、包名、二进制名、注册描述和构建脚本；删除不使用的能力、页面与权限声明。
+复制示例开发新插件时，同步修改清单身份、包名、二进制名、注册描述和构建脚本；删除不使用的能力与页面。
 
 ## 页面如何调用插件
 
@@ -50,7 +50,7 @@ Vue 页面保留 SFC，使用 TypeScript 和 `@codex-proxy/ui`。宿主负责页
 
 ## 能力与边界
 
-清单使用 SDK 0.1、清单 v1、通信协议 v1，声明 9 类扩展能力。工作台要求的宿主版本与安装步骤见[体验插件](../../README.md#体验插件)。
+清单使用 SDK 0.1、清单 v2、通信协议 v2、中间件 v3，声明 7 类扩展能力。工作台要求的宿主版本与安装步骤见[体验插件](../../README.md#体验插件)。
 
 | 行为 | 触发条件与边界 |
 | --- | --- |
@@ -62,7 +62,7 @@ Vue 页面保留 SFC，使用 TypeScript 和 `@codex-proxy/ui`。宿主负责页
 | 执行记录 | 属于当前进程，重启后清空；已保存的文本任务使用宿主私有状态持久化 |
 | 自定义认证 | 仅供独立测试环境演示；启用认证绑定并将示例 principal 映射到已有测试 Key 后使用 |
 
-权限包括 `network`（网页取文）、`models`（Key、模型目录与模型调用）、`requests`（请求处理与观察）、`public_endpoints`（公开的 `web/app.css` 示例资源）。日志和自身私有状态无需额外权限。插件以 `trustedProcess` 运行，与宿主具有相同系统身份。
+插件以 `trustedProcess` 运行，与宿主具有相同系统身份。安装意味着完整信任，清单不声明权限，宿主不按字段或访问域限制插件。
 
 ## 图片工作台
 
@@ -87,7 +87,7 @@ Vue 页面保留 SFC，使用 TypeScript 和 `@codex-proxy/ui`。宿主负责页
 
 ## 图片编辑适配示例
 
-启用工作台的 `middleware` / `request` 绑定，并确认请求在绑定范围内。客户端上传的 `image` 或 `image[]` 文件会转换成 `images: [{ image_url: "data:image/png;base64,…" }]`，然后通过一次 `next` 交给宿主原有 Images 路径。账号选择、OAuth 和上游响应仍由宿主处理；适配自身只使用现有 `requests` 权限，不读取账号凭据、不自行请求上游。
+启用工作台的 `middleware` / `request` 绑定，并确认请求在绑定范围内。客户端上传的 `image` 或 `image[]` 文件会转换成 `images: [{ image_url: "data:image/png;base64,…" }]`，然后通过一次 `next` 交给宿主原有 Images 路径。账号选择、OAuth 和上游响应仍由宿主处理；适配通过宿主的模型请求中间件执行。
 
 ```bash
 curl "$CPR_BASE_URL/v1/images/edits" \
@@ -127,6 +127,6 @@ curl "$CPR_BASE_URL/v1/images/edits" \
 - 在图片工作台验证生图、三轮增量续改、连接失效恢复、文字回复、版本回看、参考图、取消、错误后重试与明暗主题；切换页面后确认请求结束。
 - 读取文本网页，检查重定向、非文本响应和网络失败的提示。
 - 执行 `codex-proxy-rs plugin <实例 ID> ping`；自定义认证按接入指南在独立测试环境验证。
-- WebSocket 观察需要实际 WebSocket 请求；HTTP/SSE 成功不能证明它已生效。
+- WebSocket 观察需要实际产生上游 WebSocket 事件；仅确认 HTTP/SSE 请求成功不能证明观察已生效。
 
 页面执行记录只表示实际收到的调用。安装成功、独立预览和测试通过都不能替代目标环境的业务验证。

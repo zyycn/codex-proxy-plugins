@@ -1,5 +1,5 @@
 {
-  "manifestVersion": 1,
+  "manifestVersion": 2,
   "name": "capability-workbench",
   "displayName": "插件工作台",
   "publisher": "codex-proxy",
@@ -14,6 +14,7 @@
   "runtime": "trustedProcess",
   "contributes": {
     "middleware": {
+      "version": 3,
       "stages": [
         "request",
         "attempt"
@@ -27,19 +28,11 @@
     },
     "model_router": {},
     "scheduler": {},
-    "request_lifecycle": {},
-    "usage": {},
-    "web_socket_observer": {},
     "frontend_authentication": {},
     "management": {},
-    "command_line": {}
+    "command_line": {},
+    "observer": {}
   },
-  "permissions": [
-    "network",
-    "models",
-    "requests",
-    "public_endpoints"
-  ],
   "configurationSchema": {
     "type": "object",
     "properties": {},

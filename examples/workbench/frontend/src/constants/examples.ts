@@ -27,7 +27,7 @@ export const exampleGuides: ExampleGuide[] = [
     group: 'interactive',
     action: 'request',
     actionLabel: '发送请求',
-    capabilities: ['model_router', 'scheduler', 'request_lifecycle', 'usage', 'web_socket_observer'],
+    capabilities: ['model_router', 'scheduler', 'observer'],
     expected: '运行后查看模型、执行账号、Token 用量与插件收到的调用记录',
   },
   {

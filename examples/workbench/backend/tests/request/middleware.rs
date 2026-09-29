@@ -17,8 +17,8 @@ async fn middleware_consumes_only_demo_metadata_and_preserves_attempt_input() {
             "customer":"keep-me"
         }});
         let frame = peer.call_with("middleware.handle", stage,
-            json!({"request_id":"test-request","mount":mount,"operation":"generate","protocol":"openai",
-                "endpoint":"responses","transport":"http_sse","model":"test-model","headers":[],"body_visible":true,
+            json!({"request_id":"test-request","settings_sources":null,"client_key_id":"test-key","account_group_ids":[],"mount":mount,"operation":"generate","protocol":"openai",
+                "endpoint":"responses","transport":"http_sse","model":"test-model","headers":[],
                 "attempt_index":if mount == "attempt" { Some(1) } else { None }}),
             serde_json::to_vec(&input).unwrap(), |method, params, payload| {
                 assert_eq!(method, "host.middleware.next");
@@ -55,8 +55,8 @@ async fn middleware_propagates_downstream_fault_and_records_failure() {
     let mut peer = Peer::start().await;
     peer.mark_request().await;
     let frame = peer.call_with("middleware.handle", Stage::Request,
-        json!({"request_id":"test-request","mount":"request","operation":"generate","protocol":"openai",
-            "endpoint":"responses","transport":"http_sse","headers":[],"body_visible":true}),
+        json!({"request_id":"test-request","settings_sources":null,"client_key_id":"test-key","account_group_ids":[],"mount":"request","operation":"generate","protocol":"openai",
+            "endpoint":"responses","transport":"http_sse","headers":[]}),
         br#"{"input":"Hello"}"#.to_vec(), |method, params, payload| {
             assert_eq!(method, "host.middleware.next");
             assert_eq!(params["body"], "preserve");
@@ -89,8 +89,8 @@ async fn middleware_preserves_unrelated_requests_and_transforms_only_marked_text
     {
         let mut peer = Peer::start().await;
         let frame = peer.call_with("middleware.handle", Stage::Request,
-            json!({"request_id":"test-request","mount":"request","operation":"generate","protocol":"openai",
-                "endpoint":"responses","transport":"http_sse","model":"ordinary-model","headers":[],"body_visible":true}),
+            json!({"request_id":"test-request","settings_sources":null,"client_key_id":"test-key","account_group_ids":[],"mount":"request","operation":"generate","protocol":"openai",
+                "endpoint":"responses","transport":"http_sse","model":"ordinary-model","headers":[]}),
             serde_json::to_vec(&json!({"input":[{"role":"user","content":[{"type":"input_text","text":"Hello"}]},{"unrelated":"leave me"}],"metadata":metadata})).unwrap(),
             |method, params, payload| {
                 assert_eq!(method, "host.middleware.next");

@@ -23,8 +23,6 @@ pub fn plugin() -> Result<ComposedPlugin, AuthorError> {
     let schedule_scope = Arc::clone(&scope);
     let request_evidence = Arc::clone(&evidence);
     let request_scope = Arc::clone(&scope);
-    let websocket_evidence = Arc::clone(&evidence);
-    let websocket_scope = Arc::clone(&scope);
     let command_evidence = Arc::clone(&evidence);
     let frontend_evidence = Arc::clone(&evidence);
     let management_evidence = Arc::clone(&evidence);
@@ -45,15 +43,10 @@ pub fn plugin() -> Result<ComposedPlugin, AuthorError> {
             let scope = Arc::clone(&schedule_scope);
             async move { request::schedule_account(&evidence, &scope, call).await }
         })?
-        .on(methods::OBSERVE_REQUEST, move |call| {
+        .on(methods::OBSERVE, move |call| {
             let evidence = Arc::clone(&request_evidence);
             let scope = Arc::clone(&request_scope);
-            async move { request::observe_request(&evidence, &scope, call).await }
-        })?
-        .on(methods::OBSERVE_WEBSOCKET, move |call| {
-            let evidence = Arc::clone(&websocket_evidence);
-            let scope = Arc::clone(&websocket_scope);
-            async move { request::observe_websocket(&evidence, &scope, call).await }
+            async move { request::observe(&evidence, &scope, call).await }
         })?
         .on(
             methods::FRONTEND_IDENTIFIER,

@@ -1,7 +1,7 @@
 use gateway_plugin_sdk::{
     ErrorCode, PluginFault,
     call::middleware::MiddlewareMount,
-    client::{MiddlewareCall, MiddlewareResponse},
+    client::{MiddlewareResponse, RequestCall},
 };
 
 use super::scope::{ScopeTracker, body_has_scope_marker};
@@ -15,7 +15,7 @@ const RESPONSE_HEADER: &str = "x-cpr-capability-workbench";
 pub(crate) async fn middleware(
     evidence: &EvidenceLog,
     scope: &ScopeTracker,
-    call: MiddlewareCall,
+    call: RequestCall,
 ) -> Result<MiddlewareResponse, PluginFault> {
     if super::image_edit::matches(&call.request) {
         return super::image_edit::handle(evidence, call).await;
@@ -32,7 +32,7 @@ pub(crate) async fn middleware(
     if !scoped {
         return call.next.run(call.request).await;
     }
-    let MiddlewareCall {
+    let RequestCall {
         context: _,
         mut request,
         next,
@@ -131,8 +131,7 @@ fn prepare_input(
     {
         object.remove("metadata");
     }
-    let uppercased = request.head.body_visible
-        && uppercase.as_ref().and_then(Value::as_str) == Some("true")
+    let uppercased = uppercase.as_ref().and_then(Value::as_str) == Some("true")
         && document.get_mut("input").is_some_and(uppercase_text);
     request.replace_body(
         serde_json::to_vec(&document)

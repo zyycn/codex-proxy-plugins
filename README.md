@@ -25,16 +25,18 @@
 | 文本工作台 | 摘要、翻译、改写、网页取文、流式生成、取消、继续调整与保存记录 |
 | 图片工作台 | 自然语言生图、增量续聊、失效恢复、版本回看与参考图；附 multipart 图片上传适配示例 |
 
+已有发行附件的协议与兼容范围以附件内清单为准
+
 ## 体验插件
 
 1. 从 [Releases](https://github.com/zyycn/codex-proxy-plugins/releases) 下载与**宿主运行平台**匹配的 `.tar.gz`，同时下载 `.sha256` 核对摘要。
-2. 在宿主「插件管理」中上传安装包，查看声明的权限并安装。
+2. 在宿主「插件管理」中上传安装包，确认完整信任后安装。
 3. 启用自动准备的默认配置，从「扩展页」打开「插件工作台」。模型示例需要选择已有的可用 Key 和模型。
 
 > [!IMPORTANT]
-> 插件接口仍处于实验阶段，发行包标记为 Pre-release。宿主须支持清单 v1、协议 v1，并满足 `>=3.17.0, <4.0.0`，以使用图片会话所需的原生续接能力。通过 GitHub 来源安装时，需要明确填写发行标签并允许预发行。
+> 插件接口仍处于实验阶段，发行包标记为 Pre-release。当前源码要求宿主支持清单 v2、协议 v2、中间件 v3，并满足 `>=3.17.0, <4.0.0`，以使用图片会话所需的原生续接能力。通过 GitHub 来源安装时，需要明确填写发行标签并允许预发行。
 
-工作台声明 `network`、`models`、`requests`、`public_endpoints` 四个访问域。插件进程与宿主使用相同系统身份；运行模型示例会产生真实用量。各能力的触发条件见[示例说明](examples/workbench/README.md#能力与边界)。
+安装工作台意味着完整信任，清单不声明访问权限。插件进程与宿主使用相同系统身份；运行模型示例会产生真实用量。各能力的触发条件见[示例说明](examples/workbench/README.md#能力与边界)。
 
 ## 本地开发
 
@@ -51,7 +53,7 @@ pnpm --dir examples/workbench/frontend dev
 
 ```text
 examples/workbench/
-├── plugin.json    插件身份、能力、权限与资源声明
+├── plugin.json    插件身份、能力与资源声明
 ├── backend/       Rust 处理器与会话测试
 ├── frontend/      Vue 页面、宿主桥与独立预览
 └── README.md      按能力阅读源码与接口说明
@@ -61,7 +63,7 @@ dist/             安装包与校验文件（不入库）
 
 从 [`app.rs`](examples/workbench/backend/src/app.rs) 查看处理器如何组合，再按[源码导航](examples/workbench/README.md#从哪里读起)选择需要的能力。开发自己的插件时，只保留需要的处理器及对应清单声明。
 
-SDK 固定到提交 `faee3b26429b4c4260d456530f00c85b1d5874ab`，UI 使用 `v0.3.0`，实际依赖由各自锁文件固定；无需检出宿主或组件库。需要联合修改时，使用宿主的[源码联调入口](https://github.com/zyycn/codex-proxy-rs/blob/main/docs/development.md)，正式构建仍使用锁定依赖。
+SDK 与打包 CLI 固定到同一宿主提交 `2952224b3a9c20bb4fb42ad14ae2077617d0e514`，UI 使用 `v0.3.0`，实际依赖由各自锁文件固定；无需检出宿主或组件库。需要联合修改时，使用宿主的[源码联调入口](https://github.com/zyycn/codex-proxy-rs/blob/main/docs/development.md)，正式构建仍使用锁定依赖。
 
 在本仓库根目录执行检查：
 
@@ -78,7 +80,7 @@ RUST_MIN_STACK=16777216 cargo test --manifest-path examples/workbench/backend/Ca
 安装以下固定提交的打包工具，在仓库根目录运行：
 
 ```bash
-cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev f770ba127d1293bb482921019e61cae7cb3b7de9 codex-proxy-plugin-cli --root .tools
+cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev 2952224b3a9c20bb4fb42ad14ae2077617d0e514 codex-proxy-plugin-cli --root .tools
 PLUGIN_CLI="$PWD/.tools/bin/cpr-plugin" bash scripts/package
 ```
 
@@ -98,6 +100,6 @@ PLUGIN_CLI="$PWD/.tools/bin/cpr-plugin" bash scripts/package aarch64-unknown-lin
 | --- | --- |
 | 阅读示例与管理接口 | [插件工作台](examples/workbench/README.md) |
 | 安装、配置与管理版本 | [宿主插件使用说明](https://github.com/zyycn/codex-proxy-rs/blob/main/docs/plugins.md) |
-| 编写 Rust 插件 | [SDK](https://github.com/zyycn/codex-proxy-rs/blob/faee3b26429b4c4260d456530f00c85b1d5874ab/backend/crates/gateway-plugin/sdk/README.md) · [清单](https://github.com/zyycn/codex-proxy-rs/blob/faee3b26429b4c4260d456530f00c85b1d5874ab/backend/crates/gateway-plugin/sdk/docs/manifest.md) · [能力合同](https://github.com/zyycn/codex-proxy-rs/blob/faee3b26429b4c4260d456530f00c85b1d5874ab/backend/crates/gateway-plugin/sdk/docs/capabilities.md) |
-| 自定义打包流程 | [插件 CLI](https://github.com/zyycn/codex-proxy-rs/blob/f770ba127d1293bb482921019e61cae7cb3b7de9/backend/apps/plugin-cli/README.md) |
+| 编写 Rust 插件 | [SDK](https://github.com/zyycn/codex-proxy-rs/blob/2952224b3a9c20bb4fb42ad14ae2077617d0e514/backend/crates/gateway-plugin/sdk/README.md) · [清单](https://github.com/zyycn/codex-proxy-rs/blob/2952224b3a9c20bb4fb42ad14ae2077617d0e514/backend/crates/gateway-plugin/sdk/docs/manifest.md) · [能力合同](https://github.com/zyycn/codex-proxy-rs/blob/2952224b3a9c20bb4fb42ad14ae2077617d0e514/backend/crates/gateway-plugin/sdk/docs/capabilities.md) |
+| 自定义打包流程 | [插件 CLI](https://github.com/zyycn/codex-proxy-rs/blob/2952224b3a9c20bb4fb42ad14ae2077617d0e514/backend/apps/plugin-cli/README.md) |
 | 编写管理页面 | [UI 组件库](https://github.com/zyycn/codex-proxy-ui) · [宿主主题约定](https://github.com/zyycn/codex-proxy-rs/blob/main/docs/theme.md) |

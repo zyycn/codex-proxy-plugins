@@ -211,7 +211,7 @@ async function modelResponse(input: Parameters<PluginHost['models']['responses']
           return
         }
 
-        for (const capability of ['middleware', 'model_router', 'scheduler', 'request_lifecycle', 'usage'])
+        for (const capability of ['middleware', 'model_router', 'scheduler', 'observer'])
           recordEvidence(capability, `preview.${capability}`, requestId, model)
 
         const completed = {
