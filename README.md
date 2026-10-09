@@ -16,7 +16,7 @@
 
 [Codex Proxy RS](https://github.com/zyycn/codex-proxy-rs) 的插件示例仓库。后端使用公开 Rust SDK，页面使用宿主桥与 `@codex-proxy/ui`，可以独立构建和发布。
 
-目前提供一个完整示例：[**插件工作台**](examples/workbench/README.md)。你可以先体验功能，再按需要阅读对应处理器：
+完整示例：[**插件工作台**](examples/workbench/README.md)。你可以先体验功能，再按需要阅读对应处理器：
 
 | 功能 | 可以学到什么 |
 | --- | --- |
@@ -26,6 +26,8 @@
 | 图片工作台 | 自然语言生图、增量续聊、失效恢复、版本回看与参考图；附 multipart 图片上传适配示例 |
 
 已有发行附件的协议与兼容范围以附件内清单为准
+
+仅需客户端适配时，可使用无页面的 [OMP Codex 适配插件](examples/omp-compat/README.md)，通过 HTTP 和下游 WebSocket 中间件接入 OMP 的 Responses 入口与 steering 拒绝确认；构建使用 `scripts/package-omp`
 
 ## 体验插件
 
