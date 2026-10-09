@@ -14,7 +14,7 @@ path = "tests/main.rs"
 [dependencies]
 base64 = "0.23.0"
 multer = { version = "3.1.0", features = ["tokio-io"] }
-gateway-plugin-sdk = { git = "https://github.com/zyycn/codex-proxy-rs.git", rev = "b37d7901441e123cb9126a6f9af4ff3321548d24", features = ["io"] }
+gateway-plugin-sdk = { git = "https://github.com/zyycn/codex-proxy-rs.git", rev = "705f0fad06667ad6aaf0ea162a869d2d3cfe39c2", features = ["io"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
 tokio = { version = "1.52.3", default-features = false, features = ["io-std", "macros", "rt", "sync", "time"] }

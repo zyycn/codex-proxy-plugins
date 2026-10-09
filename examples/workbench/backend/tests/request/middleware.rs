@@ -1,3 +1,5 @@
+//! 工作台中间件的正文处理、执行设置保留与下游故障测试
+
 use gateway_plugin_sdk::{ErrorCode, Message, PluginFault, Stage};
 use serde_json::{Value, json};
 
@@ -47,6 +49,56 @@ async fn middleware_consumes_only_demo_metadata_and_preserves_attempt_input() {
             evidence["details"]["uppercased"],
             uppercase && mount == "request"
         );
+    }
+}
+
+#[tokio::test]
+async fn middleware_preserves_native_fast_modes_at_request_and_attempt_stages() {
+    for (stage, mount) in [(Stage::Request, "request"), (Stage::Attempt, "attempt")] {
+        for fast_mode in ["default", "enabled", "disabled"] {
+            let mut peer = Peer::start().await;
+            let frame = peer
+                .call_with(
+                    "middleware.handle",
+                    stage,
+                    json!({
+                        "request_id": "test-request",
+                        "settings_sources": null,
+                        "settings": {"fast_mode": fast_mode},
+                        "client_key_id": "test-key",
+                        "account_group_ids": [],
+                        "mount": mount,
+                        "attempt_index": if mount == "attempt" { Some(1) } else { None },
+                        "operation": "generate",
+                        "protocol": "openai",
+                        "endpoint": "responses",
+                        "transport": "http_sse",
+                        "headers": []
+                    }),
+                    br#"{"input":"Hello","metadata":{"capability_workbench":"true"}}"#.to_vec(),
+                    |method, params, payload| {
+                        assert_eq!(method, "host.middleware.next");
+                        // 未改写设置时省略替换值，由宿主保留原生 fast_mode 三态
+                        assert!(params.get("settings").is_none());
+                        if mount == "request" {
+                            assert_eq!(
+                                serde_json::from_slice::<Value>(payload).unwrap(),
+                                json!({"input": "Hello"})
+                            );
+                        } else {
+                            assert_eq!(params["body"], "preserve");
+                            assert!(payload.is_empty());
+                        }
+                        Ok((
+                            json!({"response": "response-1", "protocol": "openai", "status": 200, "headers": []}),
+                            Vec::new(),
+                        ))
+                    },
+                )
+                .await;
+            assert_eq!(result(&frame)["response"], "response-1");
+            assert!(matches!(peer.receive().await.message, Message::End { .. }));
+        }
     }
 }
 
