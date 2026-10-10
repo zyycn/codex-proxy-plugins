@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { WorkbenchSnapshot } from '../../api'
-import { BaseEmpty, BaseIconButton } from '@codex-proxy/ui'
+import { ZEmpty, ZIconButton } from '@codex-proxy/ui'
 import { RefreshCw } from '@lucide/vue'
 import { toRef } from 'vue'
 import ExampleDetail from '../../components/ExampleDetail.vue'
@@ -43,12 +43,12 @@ const runner = useExampleRunner(toRef(props, 'snapshot'), props.refresh)
         @stop="runner.stop"
       >
         <template #actions>
-          <BaseIconButton label="刷新调用记录" :loading="loading" @click="refresh">
+          <ZIconButton aria-label="刷新调用记录" :loading="loading" @click="refresh">
             <RefreshCw />
-          </BaseIconButton>
+          </ZIconButton>
         </template>
       </ExampleDetail>
-      <BaseEmpty v-else :description="loading ? '正在载入示例' : '暂时无法载入示例，请刷新重试'" />
+      <ZEmpty v-else :description="loading ? '正在载入示例' : '暂时无法载入示例，请刷新重试'" />
     </div>
   </div>
 </template>

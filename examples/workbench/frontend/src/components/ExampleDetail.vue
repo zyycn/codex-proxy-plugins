@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Evidence } from '../api'
 import type { ExampleGuide, ExampleRun, UiSelectOption } from '../types'
-import { BaseButton, BaseInput, BaseMarkdown, BaseSelect } from '@codex-proxy/ui'
+import { ZButton, ZInput, ZMarkdown, ZSelect } from '@codex-proxy/ui'
 import { Square } from '@lucide/vue'
 import { computed } from 'vue'
 import ExampleEvidence from './ExampleEvidence.vue'
@@ -50,24 +50,24 @@ const disabled = computed(() => props.busy
       <div class="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(8rem,12rem)_minmax(8rem,12rem)_1fr_auto]">
         <div v-if="usesModel" class="grid gap-2 text-cp-sm text-cp-text-secondary">
           客户端 Key
-          <BaseSelect v-model="clientKeyId" :options="keyOptions" :disabled="busy" placeholder="请选择可用 Key" aria-label="示例客户端 Key" />
+          <ZSelect v-model="clientKeyId" :options="keyOptions" :disabled="busy" placeholder="请选择可用 Key" aria-label="示例客户端 Key" />
         </div>
         <div v-if="usesModel" class="grid gap-2 text-cp-sm text-cp-text-secondary">
           模型
-          <BaseSelect v-model="modelId" :options="modelOptions" :disabled="busy || modelsLoading" :placeholder="modelsLoading ? '正在加载模型' : '请选择模型'" aria-label="示例模型" />
+          <ZSelect v-model="modelId" :options="modelOptions" :disabled="busy || modelsLoading" :placeholder="modelsLoading ? '正在加载模型' : '请选择模型'" aria-label="示例模型" />
         </div>
         <div class="grid gap-2 text-cp-sm text-cp-text-secondary" :class="usesModel ? '' : 'xl:col-span-3'">
           {{ example.action === 'uppercase' ? '转换前的文字' : '发送内容' }}
-          <BaseInput v-model="message" :disabled="busy" maxlength="4096" aria-label="示例输入文本" @keydown.enter.prevent="!disabled && emit('run')" />
+          <ZInput v-model="message" :disabled="busy" maxlength="4096" aria-label="示例输入文本" @keydown.enter.prevent="!disabled && emit('run')" />
         </div>
-        <BaseButton v-if="running" @click="emit('stop')">
+        <ZButton v-if="running" @click="emit('stop')">
           <template #icon>
             <Square class="size-3.5" />
           </template>停止
-        </BaseButton>
-        <BaseButton v-else variant="primary" :disabled="disabled" @click="emit('run')">
+        </ZButton>
+        <ZButton v-else type="primary" :disabled="disabled" @click="emit('run')">
           {{ example.actionLabel }}
-        </BaseButton>
+        </ZButton>
       </div>
       <p v-if="usesModel && modelsError" class="m-0 text-cp-sm text-cp-error-text" role="alert">
         {{ modelsError }}
@@ -87,7 +87,7 @@ const disabled = computed(() => props.busy
           {{ step }}
         </li>
       </ol>
-      <BaseMarkdown v-if="commandMarkdown" :source="commandMarkdown" />
+      <ZMarkdown v-if="commandMarkdown" :source="commandMarkdown" />
       <p class="m-0 text-cp-sm text-cp-text-secondary">
         {{ example.expected }}
       </p>

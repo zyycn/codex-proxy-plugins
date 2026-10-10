@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { WorkbenchView } from './types'
-import { BaseToast } from '@codex-proxy/ui'
 import { FlaskConical } from '@lucide/vue'
 import { shallowRef } from 'vue'
 import WorkbenchNavigation from './components/WorkbenchNavigation.vue'
@@ -20,7 +19,7 @@ const { snapshot, loading, error, refresh } = useWorkbenchData()
 <template>
   <main
     class="flex min-w-0 flex-col gap-4 font-sans text-cp-text"
-    :class="{ 'md:h-[var(--cp-plugin-viewport-height,100dvh)]': view === 'images' }"
+    :class="{ 'md:h-(--cp-plugin-viewport-height,100dvh)': view === 'images' }"
     :style="{ minHeight: view === 'images' ? undefined : preview ? '100dvh' : 'inherit' }"
   >
     <div
@@ -56,5 +55,4 @@ const { snapshot, loading, error, refresh } = useWorkbenchData()
       :error="error"
     />
   </main>
-  <BaseToast />
 </template>

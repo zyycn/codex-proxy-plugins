@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Evidence } from '../api'
-import { BaseScrollbar } from '@codex-proxy/ui'
+import { ZScrollbar } from '@codex-proxy/ui'
 import { ChevronDown } from '@lucide/vue'
 import { formatDateTime } from '../utils/workbench'
 
@@ -26,9 +26,9 @@ defineProps<{ evidence: Evidence[], capabilities: string[] }>()
           <code class="font-mono text-cp-text">{{ item.event }}</code>
           <time class="text-cp-text-tertiary">{{ formatDateTime(item.occurredAtMs) }}</time>
         </div>
-        <BaseScrollbar v-if="Object.keys(item.details).length" max-height="12rem" horizontal class="mt-2">
+        <ZScrollbar v-if="Object.keys(item.details).length" max-height="12rem" horizontal class="mt-2">
           <pre class="m-0 p-1 font-mono text-cp-xs leading-relaxed text-cp-text-secondary">{{ JSON.stringify(item.details, null, 2) }}</pre>
-        </BaseScrollbar>
+        </ZScrollbar>
       </article>
     </div>
   </details>

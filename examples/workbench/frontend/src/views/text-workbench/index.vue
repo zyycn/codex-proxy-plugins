@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { WorkbenchSnapshot } from '../../api'
 import type { UiSegmentedOption } from '../../types'
-import { BaseCard, BaseInput, BaseSegmented } from '@codex-proxy/ui'
+import { ZCard, ZInput, ZSegmented } from '@codex-proxy/ui'
 import { CircleAlert } from '@lucide/vue'
 import { computed, toRef } from 'vue'
 import ExecutionFacts from '../../components/ExecutionFacts.vue'
@@ -47,7 +47,7 @@ const noRealModels = computed(() => Boolean(
 
 <template>
   <div class="grid min-w-0 gap-4" :aria-busy="initializing">
-    <BaseCard padding="compact">
+    <ZCard padding="compact">
       <ResourceToolbar
         v-model:client-key-id="workbench.clientKeyId.value"
         v-model:model-id="workbench.modelId.value"
@@ -65,16 +65,16 @@ const noRealModels = computed(() => Boolean(
       <div class="mt-4 grid gap-3 border-0 pt-0 md:grid-cols-[auto_minmax(12rem,1fr)] md:items-end">
         <div class="grid gap-1.5 text-cp-xs font-emphasis text-cp-text-secondary">
           <span>文本任务</span>
-          <BaseSegmented
+          <ZSegmented
             v-model="workbench.task.value"
-            label="文本任务"
+            aria-label="文本任务"
             :options="taskSegmentOptions"
             :disabled="editingDisabled"
           />
         </div>
         <div class="grid min-w-0 gap-1.5 text-cp-xs font-emphasis text-cp-text-secondary">
           <span>{{ instructionLabel }}</span>
-          <BaseInput
+          <ZInput
             v-model="workbench.instruction.value"
             :disabled="editingDisabled"
             maxlength="512"
@@ -100,9 +100,9 @@ const noRealModels = computed(() => Boolean(
       <p v-else-if="noRealModels" class="mt-3 mb-0 text-cp-xs text-cp-text-tertiary">
         当前 Key 没有可用的真实模型，可以切换 Key 或先在账号管理中添加模型账号
       </p>
-    </BaseCard>
+    </ZCard>
 
-    <BaseCard padding="none" class="min-w-0 overflow-hidden">
+    <ZCard padding="none" class="min-w-0 overflow-hidden">
       <div class="grid min-w-0 lg:grid-cols-2">
         <SourceEditor
           v-model="workbench.source.value"
@@ -129,7 +129,7 @@ const noRealModels = computed(() => Boolean(
           @continue="workbench.continueWith"
         />
       </div>
-    </BaseCard>
+    </ZCard>
 
     <ExecutionFacts :facts="workbench.facts.value" />
   </div>

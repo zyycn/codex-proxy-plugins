@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ResponseFacts } from '../types'
-import { BaseScrollbar } from '@codex-proxy/ui'
+import { ZScrollbar } from '@codex-proxy/ui'
 import { Activity, ChevronDown } from '@lucide/vue'
 import { computed } from 'vue'
 import { formatDateTime } from '../utils/workbench'
@@ -53,7 +53,7 @@ const rows = computed(() => {
         完成一次生成后，可查看请求 ID、实际模型与 Token 用量
       </p>
 
-      <BaseScrollbar v-if="facts?.evidence.length" max-height="16rem">
+      <ZScrollbar v-if="facts?.evidence.length" max-height="16rem">
         <div class="grid gap-1 pr-3">
           <article
             v-for="item in facts.evidence"
@@ -71,7 +71,7 @@ const rows = computed(() => {
             </p>
           </article>
         </div>
-      </BaseScrollbar>
+      </ZScrollbar>
     </div>
   </details>
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { UiSelectOption } from '../types'
-import { BaseIconButton, BaseSelect } from '@codex-proxy/ui'
+import { ZIconButton, ZSelect } from '@codex-proxy/ui'
 import { FilePlus2, RefreshCw } from '@lucide/vue'
 
 defineProps<{
@@ -26,7 +26,7 @@ const historyId = defineModel<string>('historyId', { required: true })
   <div class="grid min-w-0 gap-3 md:grid-cols-[minmax(10rem,0.8fr)_minmax(11rem,1fr)_minmax(11rem,1fr)_auto]">
     <div class="grid min-w-0 gap-1.5 text-cp-xs font-emphasis text-cp-text-secondary">
       <span>客户端 Key</span>
-      <BaseSelect
+      <ZSelect
         v-model="clientKeyId"
         :options="keyOptions"
         :disabled="disabled || keyOptions.length === 0"
@@ -37,7 +37,7 @@ const historyId = defineModel<string>('historyId', { required: true })
     </div>
     <div class="grid min-w-0 gap-1.5 text-cp-xs font-emphasis text-cp-text-secondary">
       <span>模型</span>
-      <BaseSelect
+      <ZSelect
         v-model="modelId"
         :options="modelOptions"
         :disabled="disabled || modelsLoading || modelOptions.length === 0"
@@ -48,7 +48,7 @@ const historyId = defineModel<string>('historyId', { required: true })
     </div>
     <div class="grid min-w-0 gap-1.5 text-cp-xs font-emphasis text-cp-text-secondary">
       <span>历史记录</span>
-      <BaseSelect
+      <ZSelect
         v-model="historyId"
         :options="historyOptions"
         :disabled="disabled || historyLoading"
@@ -58,17 +58,17 @@ const historyId = defineModel<string>('historyId', { required: true })
       />
     </div>
     <div class="flex items-end gap-1">
-      <BaseIconButton
-        label="重新载入历史记录"
+      <ZIconButton
+        aria-label="重新载入历史记录"
         :loading="historyLoading"
         :disabled="disabled"
         @click="emit('refreshHistory')"
       >
         <RefreshCw />
-      </BaseIconButton>
-      <BaseIconButton label="新建任务" :disabled="disabled" @click="emit('newTask')">
+      </ZIconButton>
+      <ZIconButton aria-label="新建任务" :disabled="disabled" @click="emit('newTask')">
         <FilePlus2 />
-      </BaseIconButton>
+      </ZIconButton>
     </div>
   </div>
 </template>

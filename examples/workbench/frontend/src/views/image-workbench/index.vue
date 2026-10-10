@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { WorkbenchSnapshot } from '../../api'
-import { BaseCard } from '@codex-proxy/ui'
+import { ZCard } from '@codex-proxy/ui'
 import { computed, toRef } from 'vue'
 import ImageCanvas from '../../components/image-workbench/ImageCanvas.vue'
 import ImageConversation from '../../components/image-workbench/ImageConversation.vue'
@@ -14,7 +14,7 @@ const error = computed(() => image.error.value || image.modelsError.value || pro
 </script>
 
 <template>
-  <BaseCard padding="none" class="flex min-h-0 min-w-0 flex-col overflow-hidden md:flex-1">
+  <ZCard padding="none" class="flex min-h-0 min-w-0 flex-col overflow-hidden md:flex-1">
     <ImageToolbar
       v-model:client-key-id="image.clientKeyId.value" v-model:model-id="image.modelId.value"
       v-model:quality="image.quality.value" v-model:size="image.size.value"
@@ -32,5 +32,5 @@ const error = computed(() => image.error.value || image.modelsError.value || pro
         @upload="image.selectFile" @remove="image.clearAttachment" @select="image.selectedId.value = $event"
       />
     </div>
-  </BaseCard>
+  </ZCard>
 </template>

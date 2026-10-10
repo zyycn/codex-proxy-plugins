@@ -2,7 +2,7 @@ import type { ComputedRef } from 'vue'
 // @env browser
 import type { FetchTextReply, SavedTask, SourceKind, TaskKind } from '../api'
 import type { GenerationPhase, ResponseFacts, UseTextWorkbenchOptions } from '../types'
-import { toast } from '@codex-proxy/ui'
+import { ZNotification } from '@codex-proxy/ui'
 import { computed, onBeforeUnmount, onMounted, readonly, shallowReadonly, shallowRef, watch } from 'vue'
 import { fetchText, modelResponses } from '../api'
 import { createOperationEpoch } from '../utils/operationEpoch'
@@ -160,7 +160,7 @@ export function useTextWorkbench(options: UseTextWorkbenchOptions) {
         || sourceKind.value !== 'url' || sourceUrl.value.trim() !== requestedUrl) {
         return
       }
-      toast.error(cause instanceof Error ? cause.message : '读取网页失败，请稍后重试')
+      ZNotification.error({ message: cause instanceof Error ? cause.message : '读取网页失败，请稍后重试' })
     }
     finally {
       if (taskEpoch.isCurrent(currentTask) && fetchEpoch.isCurrent(currentFetch))
@@ -226,7 +226,7 @@ export function useTextWorkbench(options: UseTextWorkbenchOptions) {
       }
       else {
         phase.value = 'error'
-        toast.error(cause instanceof Error ? cause.message : '生成失败，请重试')
+        ZNotification.error({ message: cause instanceof Error ? cause.message : '生成失败，请重试' })
       }
       await options.refreshSnapshot()
       if (!isCurrent())

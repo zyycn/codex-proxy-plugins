@@ -33,13 +33,13 @@ const status = computed(() => {
       <div v-if="example.group === 'interactive'" class="grid gap-3 sm:grid-cols-2">
         <div class="min-w-0 rounded-cp bg-cp-bg-container p-3">
           <span class="text-cp-xs text-cp-text-tertiary">本次输入</span>
-          <p class="mb-0 mt-2 whitespace-pre-wrap break-words font-mono text-cp-sm">
+          <p class="mb-0 mt-2 whitespace-pre-wrap wrap-break-word font-mono text-cp-sm">
             {{ run.input }}
           </p>
         </div>
         <div class="min-w-0 rounded-cp bg-cp-bg-container p-3">
           <span class="text-cp-xs text-cp-text-tertiary">{{ example.action === 'echo' ? '插件返回' : '模型回复' }}</span>
-          <p class="mb-0 mt-2 whitespace-pre-wrap break-words font-mono text-cp-sm">
+          <p class="mb-0 mt-2 whitespace-pre-wrap wrap-break-word font-mono text-cp-sm">
             {{ run.output }}
           </p>
         </div>

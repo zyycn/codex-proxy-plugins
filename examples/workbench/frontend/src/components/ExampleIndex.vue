@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ExampleGuide } from '../types'
-import { BaseSelect } from '@codex-proxy/ui'
+import { ZSelect } from '@codex-proxy/ui'
 import { ChevronRight } from '@lucide/vue'
 import { computed } from 'vue'
 
@@ -19,7 +19,7 @@ const options = computed(() => props.examples.map(item => ({
 
 <template>
   <nav class="min-w-0 bg-cp-bg-container p-4 lg:px-3 lg:py-5" aria-label="基础示例">
-    <BaseSelect v-model="selectedId" :options="options" class="lg:hidden" aria-label="选择基础示例" />
+    <ZSelect v-model="selectedId" :options="options" class="lg:hidden" aria-label="选择基础示例" />
     <div class="hidden gap-6 lg:grid">
       <section v-for="group in groups" :key="group.label" class="grid gap-2" :aria-label="group.label">
         <h2 class="m-0 px-3 text-cp-xs font-normal text-cp-text-tertiary">

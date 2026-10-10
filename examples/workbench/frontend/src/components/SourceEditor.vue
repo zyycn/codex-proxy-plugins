@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { FetchTextReply, SourceKind } from '../api'
-import { BaseButton, BaseInput, BaseSegmented, BaseTextarea } from '@codex-proxy/ui'
+import { ZButton, ZInput, ZSegmented, ZTextarea } from '@codex-proxy/ui'
 import { Download } from '@lucide/vue'
 import { computed } from 'vue'
 import { sourceKindsOptions } from '../constants/workbench'
@@ -40,11 +40,11 @@ const fetchSummary = computed(() => {
           {{ sourceCount }} 字符
         </p>
       </div>
-      <BaseSegmented v-model="kind" label="原文来源" :options="sourceKindsOptions" size="sm" :disabled="disabled" />
+      <ZSegmented v-model="kind" aria-label="原文来源" :options="sourceKindsOptions" size="small" :disabled="disabled" />
     </div>
 
     <div v-if="kind === 'url'" class="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">
-      <BaseInput
+      <ZInput
         v-model="url"
         type="url"
         :disabled="disabled || fetching"
@@ -53,18 +53,18 @@ const fetchSummary = computed(() => {
         aria-label="网页地址"
         @keydown.enter.prevent="emit('fetch')"
       />
-      <BaseButton :loading="fetching" :disabled="disabled || !url.trim()" @click="emit('fetch')">
+      <ZButton :loading="fetching" :disabled="disabled || !url.trim()" @click="emit('fetch')">
         <template #icon>
           <Download class="size-4" />
         </template>
         取文
-      </BaseButton>
+      </ZButton>
       <p v-if="fetchSummary" class="m-0 text-cp-xs text-cp-text-tertiary sm:col-span-2" role="status">
         {{ fetchSummary }}
       </p>
     </div>
 
-    <BaseTextarea
+    <ZTextarea
       v-model="source"
       class="mt-4 [&_textarea]:h-64 [&_textarea]:font-normal [&_textarea]:leading-relaxed sm:[&_textarea]:h-80"
       :disabled="disabled"
@@ -76,9 +76,9 @@ const fetchSummary = computed(() => {
     />
     <div class="mt-3 flex items-center justify-between gap-2">
       <span class="text-cp-xs text-cp-text-tertiary">保留原文，生成后可继续调整结果</span>
-      <BaseButton :class="{ invisible: Boolean(source) }" size="sm" :disabled="disabled" @click="source = 'Our team released a text workbench. It can summarize, translate, and rewrite articles. Users can stop generation and save their results.'">
+      <ZButton :class="{ invisible: Boolean(source) }" size="small" :disabled="disabled" @click="source = 'Our team released a text workbench. It can summarize, translate, and rewrite articles. Users can stop generation and save their results.'">
         填入示例
-      </BaseButton>
+      </ZButton>
     </div>
   </section>
 </template>
