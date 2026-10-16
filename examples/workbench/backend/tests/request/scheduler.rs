@@ -1,3 +1,5 @@
+//! 工作台路由委托与 scheduler v2 可用候选选择测试
+
 use gateway_plugin_sdk::Stage;
 use serde_json::json;
 
@@ -27,9 +29,41 @@ async fn unmarked_requests_are_delegated_and_marked_requests_use_load_order() {
         }
         let frame = peer.call("policy.schedule_account", Stage::Scheduling,
             json!({"request_id":"test-request","attempt_index":1,"provider":"openai","model":"test-model","candidates":[
-                {"account_id":"busy","weight":100,"in_flight":1,"maximum_concurrency":2},
-                {"account_id":"idle","weight":100,"in_flight":0,"maximum_concurrency":2}
+                {"account_id":"busy","available":true,"weight":100,"in_flight":1,"maximum_concurrency":2},
+                {"account_id":"idle","available":true,"weight":100,"in_flight":0,"maximum_concurrency":2}
             ]}), Vec::new()).await;
         assert_eq!(result(&frame), &expected);
+    }
+}
+
+#[tokio::test]
+async fn marked_requests_skip_unavailable_accounts_even_with_lower_load() {
+    let mut peer = Peer::start().await;
+    peer.mark_request().await;
+    let frame = peer.call("policy.schedule_account", Stage::Scheduling,
+        json!({"request_id":"test-request","attempt_index":1,"provider":"openai","model":"test-model","candidates":[
+            {"account_id":"unavailable","available":false,"weight":100,"in_flight":0,"maximum_concurrency":2},
+            {"account_id":"available","available":true,"weight":100,"in_flight":1,"maximum_concurrency":2}
+        ]}), Vec::new()).await;
+    assert_eq!(
+        result(&frame),
+        &json!({"decision":"pick","account_id":"available"})
+    );
+}
+
+#[tokio::test]
+async fn marked_requests_delegate_when_no_account_is_available() {
+    let mut peer = Peer::start().await;
+    peer.mark_request().await;
+    for candidates in [
+        json!([]),
+        json!([
+            {"account_id":"unavailable","available":false,"weight":100,"in_flight":0,"maximum_concurrency":2}
+        ]),
+    ] {
+        let frame = peer.call("policy.schedule_account", Stage::Scheduling,
+            json!({"request_id":"test-request","attempt_index":1,"provider":"openai","model":"test-model","candidates":candidates}),
+            Vec::new()).await;
+        assert_eq!(result(&frame), &json!({"decision":"delegate"}));
     }
 }

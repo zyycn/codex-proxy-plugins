@@ -27,7 +27,9 @@
       ]
     },
     "model_router": {},
-    "scheduler": {},
+    "scheduler": {
+      "version": 2
+    },
     "frontend_authentication": {},
     "management": {},
     "command_line": {},
