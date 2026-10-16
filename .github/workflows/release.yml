@@ -62,7 +62,7 @@ jobs:
           workspaces: examples/workbench/backend -> target
       - run: pnpm --dir examples/workbench/frontend install --frozen-lockfile
       - name: Install pinned package tool
-        run: cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev 05ba116eef849a0f4fa2d1940be82182bb2f7683 codex-proxy-plugin-cli
+        run: cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev 64c00f4adb08a155600ae84c4fc214c6533dbcd0 codex-proxy-plugin-cli
       - name: Build installable package
         env:
           PLUGIN_TARGET: ${{ matrix.target }}
