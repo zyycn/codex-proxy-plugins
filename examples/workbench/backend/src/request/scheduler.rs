@@ -1,3 +1,5 @@
+//! 工作台演示请求的可用账号选择
+
 use super::scope::ScopeTracker;
 use crate::evidence::{EvidenceInput, EvidenceLog};
 use gateway_plugin_sdk::{
@@ -36,6 +38,7 @@ fn schedule_decision(
     let selected = request
         .candidates
         .iter()
+        .filter(|candidate| candidate.available)
         .min_by_key(|candidate| {
             (
                 candidate.in_flight,
