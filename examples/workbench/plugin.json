@@ -14,7 +14,7 @@
   "runtime": "trustedProcess",
   "contributes": {
     "middleware": {
-      "version": 4,
+      "version": 5,
       "stages": [
         "request",
         "attempt"
@@ -26,14 +26,22 @@
         "openai"
       ]
     },
-    "model_router": {},
-    "scheduler": {
+    "model_router": {
       "version": 2
     },
-    "frontend_authentication": {},
-    "management": {},
+    "scheduler": {
+      "version": 3
+    },
+    "frontend_authentication": {
+      "version": 2
+    },
+    "management": {
+      "version": 2
+    },
     "command_line": {},
-    "observer": {}
+    "observer": {
+      "version": 2
+    }
   },
   "configurationSchema": {
     "type": "object",

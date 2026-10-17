@@ -70,6 +70,7 @@ async fn middleware_next_wait_outlives_default_sdk_timeout_in_real_process() {
                     id,
                     method: "middleware.handle".to_owned(),
                     context: CallContext {
+                        request: None,
                         call_id: id,
                         instance_id: "test-instance".to_owned(),
                         generation: 1,

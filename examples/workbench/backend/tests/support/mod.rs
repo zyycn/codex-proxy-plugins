@@ -88,6 +88,7 @@ impl Peer {
                 id,
                 method: method.to_owned(),
                 context: CallContext {
+                    request: None,
                     call_id: id,
                     instance_id: "test-instance".to_owned(),
                     generation: 1,
