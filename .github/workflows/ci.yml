@@ -39,8 +39,11 @@ jobs:
           workspaces: examples/workbench/backend -> target
       - run: pnpm --dir examples/workbench/frontend install --frozen-lockfile
       - run: pnpm --dir examples/workbench/frontend lint
-      - run: pnpm --dir examples/workbench/frontend build
       - run: cargo fmt --manifest-path examples/workbench/backend/Cargo.toml --check
       - run: cargo clippy --manifest-path examples/workbench/backend/Cargo.toml --all-targets --all-features --locked -- -D warnings
       - run: cargo test --manifest-path examples/workbench/backend/Cargo.toml --locked
       - run: bash -n scripts/package
+      - name: Install pinned package tool
+        run: cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev bdcbcc7ffb2b2839c3a710a41cc12cb0fe7ee801 codex-proxy-plugin-cli
+      - name: Build installable package
+        run: bash scripts/package x86_64-unknown-linux-gnu
