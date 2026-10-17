@@ -115,8 +115,9 @@ dependencies = [
 [[package]]
 name = "gateway-plugin-sdk"
 version = "0.1.0"
-source = "git+https://github.com/zyycn/codex-proxy-rs.git?rev=bdcbcc7ffb2b2839c3a710a41cc12cb0fe7ee801#bdcbcc7ffb2b2839c3a710a41cc12cb0fe7ee801"
+source = "git+https://github.com/zyycn/codex-proxy-rs.git?rev=45954899e53081a2e775fb9351e22908e85221c7#45954899e53081a2e775fb9351e22908e85221c7"
 dependencies = [
+ "base64",
  "semver",
  "serde",
  "serde_json",
