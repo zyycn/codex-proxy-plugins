@@ -1,19 +1,38 @@
-//! 真实工作台子进程在 request 与 attempt 阶段等待 next 超过默认 SDK 预算的回归测试
+//! 用虚拟时钟验证 next 预算暂停，单独覆盖真实工作台子进程的交互
 
 use std::{collections::BTreeSet, process::Stdio, time::Duration};
 
-use codex_proxy_plugin_workbench::{PLUGIN_ID, manifest};
-use gateway_plugin_sdk::client::{read_frame, write_frame};
+use codex_proxy_plugin_workbench::{PLUGIN_ID, manifest, plugin};
+use gateway_plugin_sdk::client::{PluginSession, SessionConfig, read_frame, write_frame};
 use gateway_plugin_sdk::{CallContext, Frame, Handshake, Message, PROTOCOL_VERSION, Stage};
 use serde_json::json;
-use tokio::process::{ChildStdout, Command};
+use tokio::{
+    io::{AsyncRead, AsyncWrite},
+    process::Command,
+};
 
 use crate::support::result;
 
-const NEXT_WAIT: Duration = Duration::from_secs(125);
+#[tokio::test(start_paused = true)]
+async fn middleware_next_wait_outlives_default_sdk_timeout_with_virtual_time() {
+    let (host, transport) = tokio::io::duplex(2 * 1024 * 1024);
+    let (reader, writer) = tokio::io::split(transport);
+    let task = tokio::spawn(async move {
+        let session = PluginSession::accept(reader, writer, SessionConfig::default())
+            .await
+            .unwrap();
+        session.run(plugin().unwrap()).await.unwrap();
+    });
+    let (mut reader, mut writer) = tokio::io::split(host);
+    verify_next(&mut reader, &mut writer, true).await;
+    tokio::time::timeout(Duration::from_secs(10), task)
+        .await
+        .unwrap()
+        .unwrap();
+}
 
 #[tokio::test]
-async fn middleware_next_wait_outlives_default_sdk_timeout_in_real_process() {
+async fn middleware_next_round_trips_in_real_process() {
     // 可指定待打包的 release 二进制，默认使用 Cargo 为集成测试构建的真实插件
     let binary = std::env::var_os("CPR_WORKBENCH_TEST_BINARY")
         .unwrap_or_else(|| env!("CARGO_BIN_EXE_codex-proxy-plugin-workbench").into());
@@ -26,8 +45,23 @@ async fn middleware_next_wait_outlives_default_sdk_timeout_in_real_process() {
         .unwrap();
     let mut writer = child.stdin.take().unwrap();
     let mut reader = child.stdout.take().unwrap();
+    verify_next(&mut reader, &mut writer, false).await;
+    assert!(
+        tokio::time::timeout(Duration::from_secs(10), child.wait())
+            .await
+            .unwrap()
+            .unwrap()
+            .success()
+    );
+}
+
+async fn verify_next<R: AsyncRead + Unpin, W: AsyncWrite + Unpin>(
+    reader: &mut R,
+    writer: &mut W,
+    advance_clock: bool,
+) {
     write_frame(
-        &mut writer,
+        writer,
         &Frame::control(Message::Hello {
             handshake: Handshake {
                 protocol_version: PROTOCOL_VERSION,
@@ -44,7 +78,7 @@ async fn middleware_next_wait_outlives_default_sdk_timeout_in_real_process() {
     .await
     .unwrap();
     assert!(matches!(
-        receive(&mut reader).await.message,
+        receive(reader).await.message,
         Message::Ready { .. }
     ));
 
@@ -64,7 +98,7 @@ async fn middleware_next_wait_outlives_default_sdk_timeout_in_real_process() {
             });
         }
         write_frame(
-            &mut writer,
+            writer,
             &Frame {
                 message: Message::Call {
                     id,
@@ -104,7 +138,7 @@ async fn middleware_next_wait_outlives_default_sdk_timeout_in_real_process() {
         .await
         .unwrap();
         write_frame(
-            &mut writer,
+            writer,
             &Frame::control(Message::Credit {
                 id,
                 bytes: 1024 * 1024,
@@ -118,7 +152,7 @@ async fn middleware_next_wait_outlives_default_sdk_timeout_in_real_process() {
     let mut callbacks = Vec::new();
     let mut waiting = BTreeSet::new();
     for _ in cases {
-        let frame = receive(&mut reader).await;
+        let frame = receive(reader).await;
         let Message::Callback {
             id,
             parent_id,
@@ -143,15 +177,18 @@ async fn middleware_next_wait_outlives_default_sdk_timeout_in_real_process() {
         callbacks.push((id, parent_id));
     }
 
-    // 所有 next 已发出后再实际等待，覆盖默认 120 秒期限且不推进虚拟时钟
-    let unexpected = tokio::time::timeout(NEXT_WAIT, read_frame(&mut reader)).await;
-    assert!(
-        unexpected.is_err(),
-        "等待 next 时插件提前结束调用：{unexpected:?}"
-    );
+    if advance_clock {
+        // 会话与处理器处于同一暂停时钟，越过默认 120 秒期限而不消耗真实时间
+        tokio::time::advance(Duration::from_secs(125)).await;
+        let unexpected = tokio::time::timeout(Duration::from_millis(1), read_frame(reader)).await;
+        assert!(
+            unexpected.is_err(),
+            "等待 next 时插件提前结束调用：{unexpected:?}"
+        );
+    }
     for (id, parent_id) in callbacks {
         write_frame(
-            &mut writer,
+            writer,
             &Frame::control(Message::Result {
                 id,
                 result: json!({
@@ -167,7 +204,7 @@ async fn middleware_next_wait_outlives_default_sdk_timeout_in_real_process() {
     let mut replied = BTreeSet::new();
     let mut ended = BTreeSet::new();
     for _ in 0..cases.len() * 2 {
-        let frame = receive(&mut reader).await;
+        let frame = receive(reader).await;
         match frame.message {
             Message::Result { id, .. } => {
                 assert!(waiting.contains(&id) && replied.insert(id));
@@ -186,19 +223,12 @@ async fn middleware_next_wait_outlives_default_sdk_timeout_in_real_process() {
         }
     }
     assert_eq!(ended, waiting);
-    write_frame(&mut writer, &Frame::control(Message::Shutdown))
+    write_frame(writer, &Frame::control(Message::Shutdown))
         .await
         .unwrap();
-    assert!(
-        tokio::time::timeout(Duration::from_secs(10), child.wait())
-            .await
-            .unwrap()
-            .unwrap()
-            .success()
-    );
 }
 
-async fn receive(reader: &mut ChildStdout) -> Frame {
+async fn receive(reader: &mut (impl AsyncRead + Unpin)) -> Frame {
     tokio::time::timeout(Duration::from_secs(10), read_frame(reader))
         .await
         .expect("插件响应超时")

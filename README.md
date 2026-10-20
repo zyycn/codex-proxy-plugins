@@ -75,7 +75,7 @@ RUST_MIN_STACK=16777216 cargo clippy --manifest-path examples/workbench/backend/
 RUST_MIN_STACK=16777216 cargo test --manifest-path examples/workbench/backend/Cargo.toml --locked
 ```
 
-后端测试启动真实插件子进程，实际等待 125 秒核对 `next` 的预算暂停行为。
+后端测试用虚拟时钟核对 `next` 的预算暂停，真实子进程单独验证握手、回调与退出，不进行长时间等待。
 
 ## 构建安装包
 

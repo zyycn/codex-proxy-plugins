@@ -86,7 +86,7 @@ async fn fetch_text(
                 url: normalized_url.clone(),
                 headers: vec![(
                     "accept".to_owned(),
-                    "text/plain, text/html, application/json;q=0.8".to_owned(),
+                    "text/plain, text/html, application/json;q=0.8".into(),
                 )],
             },
             Vec::new(),
@@ -98,7 +98,7 @@ async fn fetch_text(
         .headers
         .iter()
         .find(|(name, _)| name.eq_ignore_ascii_case("content-type"))
-        .map(|(_, value)| value.clone());
+        .map(|(_, value)| std::str::from_utf8(value.as_ref()));
     let mut stream = response.body;
     let source_error = if !(200..300).contains(&status) {
         Some(ApiError::new(
@@ -110,7 +110,7 @@ async fn fetch_text(
                 format!("网页返回 HTTP {status}，请确认地址可访问")
             },
         ))
-    } else if content_type.as_deref().is_some_and(|value| !textual(value)) {
+    } else if content_type.is_some_and(|value| !value.is_ok_and(textual)) {
         Some(ApiError::new(
             502,
             "invalid_response",
@@ -138,7 +138,7 @@ async fn fetch_text(
     Ok(FetchTextResponse {
         url: normalized_url,
         status: response.status,
-        content_type,
+        content_type: content_type.and_then(Result::ok).map(str::to_owned),
         bytes: text.len(),
         text,
         truncated,
