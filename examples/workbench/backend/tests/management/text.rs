@@ -1,4 +1,4 @@
-use gateway_plugin_sdk::{ErrorCode, PluginFault};
+use gateway_plugin_sdk::{ErrorCode, PROTOCOL_VERSION, PluginFault};
 use serde_json::json;
 
 use crate::support::Peer;
@@ -24,10 +24,7 @@ async fn text_fetch_truncates_only_incomplete_utf8_and_preserves_exact_limit() {
                 "api/fetch-text",
                 Some(json!({"url":"https://example.test/text"})),
                 |method, _, _| match method {
-                    "host.http.do_stream" => Ok((
-                        json!({"status":200,"headers":[],"stream":"test-stream"}),
-                        Vec::new(),
-                    )),
+                    "host.http.do_stream" => Ok((http_stream_response(200, None), Vec::new())),
                     "host.http.stream_read" => {
                         let chunk = chunks.next();
                         Ok((
@@ -68,17 +65,35 @@ async fn text_fetch_accepts_text_and_closes_rejected_sources() {
         let mut peer = Peer::start().await;
         let mut reads = 0;
         let mut closed = false;
-        let (status, body) = peer.api("POST", "api/fetch-text", Some(json!({"url":"https://example.test/text"})), |method, _, _| {
-            match method {
-                "host.http.do_stream" => Ok((json!({"status":source_status,"headers":[["content-type",content_type]],"stream":"test-stream"}), Vec::new())),
-                "host.http.stream_read" => {
-                    reads += 1;
-                    Ok((json!({"eof": reads > 1}), if reads == 1 { "示例文本".as_bytes().to_vec() } else { Vec::new() }))
-                }
-                "host.http.stream_close" => { closed = true; Ok((json!({}), Vec::new())) }
-                _ => panic!("出现未预期的宿主回调：{method}"),
-            }
-        }).await;
+        let (status, body) = peer
+            .api(
+                "POST",
+                "api/fetch-text",
+                Some(json!({"url":"https://example.test/text"})),
+                |method, _, _| match method {
+                    "host.http.do_stream" => Ok((
+                        http_stream_response(source_status, Some(content_type)),
+                        Vec::new(),
+                    )),
+                    "host.http.stream_read" => {
+                        reads += 1;
+                        Ok((
+                            json!({"eof": reads > 1}),
+                            if reads == 1 {
+                                "示例文本".as_bytes().to_vec()
+                            } else {
+                                Vec::new()
+                            },
+                        ))
+                    }
+                    "host.http.stream_close" => {
+                        closed = true;
+                        Ok((json!({}), Vec::new()))
+                    }
+                    _ => panic!("出现未预期的宿主回调：{method}"),
+                },
+            )
+            .await;
         assert_eq!(status, expected_status);
         if expected_status == 200 {
             assert_eq!(body["text"], "示例文本");
@@ -159,24 +174,28 @@ async fn text_fetch_removes_page_fragments_and_keeps_the_bounded_stream() {
     let mut peer = Peer::start().await;
     let mut reads = 0;
     let mut closed = false;
-    let (status, body) = peer.api(
-        "POST", "api/fetch-text", Some(json!({"url":"https://example.test/text#section"})),
-        |method, params, _| match method {
-            "host.http.do_stream" => {
-                assert_eq!(params["url"], "https://example.test/text");
-                Ok((json!({"status":200,"headers":[["content-type","text/plain"]],"stream":"test-stream"}), Vec::new()))
-            }
-            "host.http.stream_read" => {
-                reads += 1;
-                Ok((json!({"eof":false}), vec![b'a'; 64 * 1024]))
-            }
-            "host.http.stream_close" => {
-                closed = true;
-                Ok((json!({}), Vec::new()))
-            }
-            _ => panic!("出现未预期的宿主回调：{method}"),
-        },
-    ).await;
+    let (status, body) = peer
+        .api(
+            "POST",
+            "api/fetch-text",
+            Some(json!({"url":"https://example.test/text#section"})),
+            |method, params, _| match method {
+                "host.http.do_stream" => {
+                    assert_eq!(params["url"], "https://example.test/text");
+                    Ok((http_stream_response(200, Some("text/plain")), Vec::new()))
+                }
+                "host.http.stream_read" => {
+                    reads += 1;
+                    Ok((json!({"eof":false}), vec![b'a'; 64 * 1024]))
+                }
+                "host.http.stream_close" => {
+                    closed = true;
+                    Ok((json!({}), Vec::new()))
+                }
+                _ => panic!("出现未预期的宿主回调：{method}"),
+            },
+        )
+        .await;
     assert_eq!(status, 200);
     assert_eq!(body["url"], "https://example.test/text");
     assert_eq!(body["bytes"], 256 * 1024);
@@ -194,10 +213,7 @@ async fn text_fetch_keeps_stream_read_timeout_distinct_from_open_failure() {
             "api/fetch-text",
             Some(json!({"url":"https://example.test/text"})),
             |method, _, _| match method {
-                "host.http.do_stream" => Ok((
-                    json!({"status":200,"headers":[],"stream":"test-stream"}),
-                    Vec::new(),
-                )),
+                "host.http.do_stream" => Ok((http_stream_response(200, None), Vec::new())),
                 "host.http.stream_read" => {
                     Err(PluginFault::new(ErrorCode::Timeout, "response deadline"))
                 }
@@ -207,4 +223,24 @@ async fn text_fetch_keeps_stream_read_timeout_distinct_from_open_failure() {
         .await;
     assert_eq!(status, 504);
     assert_eq!(body["error"]["message"], "读取网页超时，请稍后重试");
+}
+
+// 正式依赖与主仓源码联调使用不同 SDK，fixture 按当前编译协议生成真实响应
+fn http_stream_response(status: u16, content_type: Option<&str>) -> serde_json::Value {
+    let headers = content_type
+        .map(|value| {
+            if PROTOCOL_VERSION >= 5 {
+                json!(["content-type", value.as_bytes()])
+            } else {
+                json!(["content-type", value])
+            }
+        })
+        .into_iter()
+        .collect::<Vec<_>>();
+    let mut response = json!({"status":status,"headers":headers,"stream":"test-stream"});
+    if PROTOCOL_VERSION >= 5 {
+        response["http_version"] = json!("HTTP/1.1");
+        response["trailers"] = json!([]);
+    }
+    response
 }

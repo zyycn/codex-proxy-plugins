@@ -21,7 +21,7 @@ tokio = { version = "1.52.3", default-features = false, features = ["io-std", "m
 url = "2.5.8"
 
 [dev-dependencies]
-tokio = { version = "1.52.3", default-features = false, features = ["io-util", "process"] }
+tokio = { version = "1.52.3", default-features = false, features = ["io-util", "process", "test-util"] }
 
 [lints.rust]
 warnings = "deny"
