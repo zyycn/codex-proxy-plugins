@@ -31,8 +31,9 @@ jobs:
           node-version: '24'
           cache: pnpm
           cache-dependency-path: examples/workbench/frontend/pnpm-lock.yaml
-      - uses: dtolnay/rust-toolchain@1a3a6d54512beeaffd394f8d516ca16f2c506a20 # 1.97
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
         with:
+          toolchain: 1.99.1
           components: rustfmt,clippy
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
@@ -44,6 +45,6 @@ jobs:
       - run: cargo test --manifest-path examples/workbench/backend/Cargo.toml --locked
       - run: bash -n scripts/package
       - name: Install pinned package tool
-        run: cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev 45954899e53081a2e775fb9351e22908e85221c7 codex-proxy-plugin-cli
+        run: cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev 78bc57c5cf24b01a38e985cdd739bb4ae89ce11f codex-proxy-plugin-cli
       - name: Build installable package
         run: bash scripts/package x86_64-unknown-linux-gnu

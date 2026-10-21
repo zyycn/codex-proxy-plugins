@@ -1,4 +1,6 @@
-use gateway_plugin_sdk::{ErrorCode, PROTOCOL_VERSION, PluginFault};
+//! 验证网页取文的字节响应头、文本边界与流资源释放
+
+use gateway_plugin_sdk::{ErrorCode, PluginFault};
 use serde_json::json;
 
 use crate::support::Peer;
@@ -56,11 +58,12 @@ async fn text_fetch_truncates_only_incomplete_utf8_and_preserves_exact_limit() {
 #[tokio::test]
 async fn text_fetch_accepts_text_and_closes_rejected_sources() {
     for (source_status, content_type, expected_status) in [
-        (200, "text/html; charset=utf-8", 200),
-        (200, "application/problem+json", 200),
-        (200, "application/octet-stream", 502),
-        (301, "text/plain", 502),
-        (404, "text/plain", 502),
+        (200, b"text/html; charset=utf-8".as_slice(), 200),
+        (200, b"application/problem+json".as_slice(), 200),
+        (200, b"application/octet-stream".as_slice(), 502),
+        (200, b"\xff".as_slice(), 502),
+        (301, b"text/plain".as_slice(), 502),
+        (404, b"text/plain".as_slice(), 502),
     ] {
         let mut peer = Peer::start().await;
         let mut reads = 0;
@@ -182,7 +185,7 @@ async fn text_fetch_removes_page_fragments_and_keeps_the_bounded_stream() {
             |method, params, _| match method {
                 "host.http.do_stream" => {
                     assert_eq!(params["url"], "https://example.test/text");
-                    Ok((http_stream_response(200, Some("text/plain")), Vec::new()))
+                    Ok((http_stream_response(200, Some(b"text/plain")), Vec::new()))
                 }
                 "host.http.stream_read" => {
                     reads += 1;
@@ -225,22 +228,16 @@ async fn text_fetch_keeps_stream_read_timeout_distinct_from_open_failure() {
     assert_eq!(body["error"]["message"], "读取网页超时，请稍后重试");
 }
 
-// 正式依赖与主仓源码联调使用不同 SDK，fixture 按当前编译协议生成真实响应
-fn http_stream_response(status: u16, content_type: Option<&str>) -> serde_json::Value {
+fn http_stream_response(status: u16, content_type: Option<&[u8]>) -> serde_json::Value {
     let headers = content_type
-        .map(|value| {
-            if PROTOCOL_VERSION >= 5 {
-                json!(["content-type", value.as_bytes()])
-            } else {
-                json!(["content-type", value])
-            }
-        })
+        .map(|value| json!(["content-type", value]))
         .into_iter()
         .collect::<Vec<_>>();
-    let mut response = json!({"status":status,"headers":headers,"stream":"test-stream"});
-    if PROTOCOL_VERSION >= 5 {
-        response["http_version"] = json!("HTTP/1.1");
-        response["trailers"] = json!([]);
-    }
-    response
+    json!({
+        "status": status,
+        "http_version": "HTTP/1.1",
+        "headers": headers,
+        "stream": "test-stream",
+        "trailers": [],
+    })
 }
