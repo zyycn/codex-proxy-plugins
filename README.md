@@ -16,7 +16,7 @@
 
 [Codex Proxy RS](https://github.com/zyycn/codex-proxy-rs) 的插件示例仓库。后端使用公开 Rust SDK，页面使用宿主桥与 `@codex-proxy/ui`，可以独立构建和发布。
 
-目前提供一个完整示例：[**插件工作台**](examples/workbench/README.md)。你可以先体验功能，再按需要阅读对应处理器：
+仓库提供一个完整示例：[**插件工作台**](examples/workbench/README.md)。可以先体验功能，再按需要阅读对应处理器：
 
 | 功能 | 可以学到什么 |
 | --- | --- |
@@ -25,18 +25,16 @@
 | 文本工作台 | 摘要、翻译、改写、网页取文、流式生成、取消、继续调整与保存记录 |
 | 图片工作台 | 自然语言生图、增量续聊、失效恢复、版本回看与参考图；附 multipart 图片上传适配示例 |
 
-已有发行附件的协议与兼容范围以附件内清单为准
-
 ## 体验插件
 
-1. 从 [Releases](https://github.com/zyycn/codex-proxy-plugins/releases) 下载与**宿主运行平台**匹配的 `.tar.gz`，同时下载 `.sha256` 核对摘要。
-2. 在宿主「插件管理」中上传安装包，确认完整信任后安装。
-3. 启用自动准备的默认配置，从「扩展页」打开「插件工作台」。模型示例需要选择已有的可用 Key 和模型。
+1. 从 [Releases](https://github.com/zyycn/codex-proxy-plugins/releases) 下载与**宿主运行平台**匹配的 `.tar.gz`，同时下载 `.sha256` 核对摘要
+2. 在宿主「插件管理」中上传安装包，确认完整信任后安装
+3. 配置完整时会自动启用；从插件详情或左侧插件导航打开「插件工作台」，模型示例需要选择已有的可用 Key 和模型
 
 > [!IMPORTANT]
-> 当前工作台源码要求宿主支持清单 v2、协议 v5、中间件 v5、调度 v3，并满足 `>=3.29.7, <4.0.0`。已有发行附件以包内清单为准。通过 GitHub 来源安装正式版时，无需允许预发行；使用预发行版时需明确填写标签并允许预发行。
+> 工作台源码要求宿主满足 `>=3.29.7, <4.0.0`，支持清单 v2、协议 v5、中间件 v5、调度 v3；发行附件以包内清单为准。通过 GitHub 来源安装预发行版时，需明确填写标签并允许预发行
 
-安装工作台意味着完整信任，清单不声明访问权限。插件进程与宿主使用相同系统身份；运行模型示例会产生真实用量。各能力的触发条件见[示例说明](examples/workbench/README.md#能力与边界)。
+安装工作台意味着完整信任，插件进程与宿主使用相同系统身份，清单不提供权限隔离。运行模型示例会产生真实用量；各能力的触发条件见[示例说明](examples/workbench/README.md#能力与边界)
 
 ## 本地开发
 
@@ -74,8 +72,6 @@ cargo fmt --manifest-path examples/workbench/backend/Cargo.toml --check
 RUST_MIN_STACK=16777216 cargo clippy --manifest-path examples/workbench/backend/Cargo.toml --all-targets --all-features --locked -- -D warnings
 RUST_MIN_STACK=16777216 cargo test --manifest-path examples/workbench/backend/Cargo.toml --locked
 ```
-
-后端测试用虚拟时钟核对 `next` 的预算暂停，真实子进程单独验证握手、回调与退出，不进行长时间等待。
 
 ## 构建安装包
 
