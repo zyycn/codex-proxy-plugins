@@ -16,7 +16,7 @@
     "build:source": "vue-tsc -p tsconfig.source.json --noEmit && vite build --mode source"
   },
   "dependencies": {
-    "@codex-proxy/ui": "github:zyycn/codex-proxy-ui#acd8578f82a91dc5d6da70b68c3bd354a1dde061",
+    "@codex-proxy/ui": "github:zyycn/codex-proxy-ui#8177ba741376564f229aef50da8e76d29e4a5282",
     "@lucide/vue": "^1.47.0",
     "vue": "^3.5.42"
   },
