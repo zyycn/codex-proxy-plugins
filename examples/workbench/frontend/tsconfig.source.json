@@ -16,6 +16,9 @@
       "@codex-proxy/ui/theme": [
         "../../../../ui/src/theme/index.ts"
       ],
+      "@codex-proxy/ui/locale": [
+        "../../../../ui/src/locale/index.ts"
+      ],
       "@codex-proxy/ui/*": [
         "../../../../ui/src/components/*/index.ts"
       ]

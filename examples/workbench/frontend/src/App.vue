@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { WorkbenchView } from './types'
+import { ZConfigProvider } from '@codex-proxy/ui'
+import { zhHans } from '@codex-proxy/ui/locale'
 import { FlaskConical } from '@lucide/vue'
 import { shallowRef } from 'vue'
 import WorkbenchNavigation from './components/WorkbenchNavigation.vue'
@@ -17,42 +19,44 @@ const { snapshot, loading, error, refresh } = useWorkbenchData()
 </script>
 
 <template>
-  <main
-    class="flex min-w-0 flex-col gap-4 font-sans text-cp-text"
-    :class="{ 'md:h-(--cp-plugin-viewport-height,100dvh)': view === 'images' }"
-    :style="{ minHeight: view === 'images' ? undefined : preview ? '100dvh' : 'inherit' }"
-  >
-    <div
-      v-if="preview"
-      class="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-cp bg-cp-warning-container px-3 py-2 text-cp-sm text-cp-warning-on-container"
-      role="note"
+  <ZConfigProvider :locale="zhHans">
+    <main
+      class="flex min-w-0 flex-col gap-4 font-sans text-cp-text"
+      :class="{ 'md:h-(--cp-plugin-viewport-height,100dvh)': view === 'images' }"
+      :style="{ minHeight: view === 'images' ? undefined : preview ? '100dvh' : 'inherit' }"
     >
-      <span class="inline-flex items-center gap-2">
-        <FlaskConical class="size-4 shrink-0" aria-hidden="true" />
-        独立模拟预览，不代表宿主安装或集成结果
-      </span>
-    </div>
+      <div
+        v-if="preview"
+        class="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-cp bg-cp-warning-container px-3 py-2 text-cp-sm text-cp-warning-on-container"
+        role="note"
+      >
+        <span class="inline-flex items-center gap-2">
+          <FlaskConical class="size-4 shrink-0" aria-hidden="true" />
+          独立模拟预览，不代表宿主安装或集成结果
+        </span>
+      </div>
 
-    <WorkbenchNavigation v-model="view" class="shrink-0" />
-    <TextWorkbench
-      v-show="view === 'text'"
-      :snapshot="snapshot"
-      :loading="loading"
-      :error="error"
-      :refresh="refresh"
-    />
-    <BasicExamples
-      v-show="view === 'examples'"
-      :snapshot="snapshot"
-      :loading="loading"
-      :error="error"
-      :refresh="refresh"
-    />
-    <ImageWorkbench
-      v-if="view === 'images'"
-      :snapshot="snapshot"
-      :loading="loading"
-      :error="error"
-    />
-  </main>
+      <WorkbenchNavigation v-model="view" class="shrink-0" />
+      <TextWorkbench
+        v-show="view === 'text'"
+        :snapshot="snapshot"
+        :loading="loading"
+        :error="error"
+        :refresh="refresh"
+      />
+      <BasicExamples
+        v-show="view === 'examples'"
+        :snapshot="snapshot"
+        :loading="loading"
+        :error="error"
+        :refresh="refresh"
+      />
+      <ImageWorkbench
+        v-if="view === 'images'"
+        :snapshot="snapshot"
+        :loading="loading"
+        :error="error"
+      />
+    </main>
+  </ZConfigProvider>
 </template>

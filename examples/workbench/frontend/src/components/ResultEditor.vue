@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { GenerationPhase } from '../types'
-import { ZButton, ZIconButton, ZInput, ZMarkdown, ZNotification, ZScrollbar, ZTextarea } from '@codex-proxy/ui'
+import { ZButton, ZIconButton, ZInput, ZMarkdown, ZScrollbar, ZTextarea } from '@codex-proxy/ui'
 import { AlignLeft, ArrowUp, Check, CircleAlert, Copy, LoaderCircle, Pencil, Save, Send, Square } from '@lucide/vue'
 import { computed, shallowRef, watch } from 'vue'
 import { generationLabels } from '../constants/workbench'
+import { notification } from '../utils/notification'
 
 const props = defineProps<{
   phase: GenerationPhase
@@ -34,7 +35,7 @@ async function copyResult() {
     copied.value = true
   }
   catch {
-    ZNotification.error({ message: '复制失败，可切换编辑模式后手动复制' })
+    notification.error({ message: '复制失败，可切换编辑模式后手动复制' })
   }
 }
 

@@ -2,9 +2,9 @@ import type { ComputedRef } from 'vue'
 // @env browser
 import type { FetchTextReply, SavedTask, SourceKind, TaskKind } from '../api'
 import type { GenerationPhase, ResponseFacts, UseTextWorkbenchOptions } from '../types'
-import { ZNotification } from '@codex-proxy/ui'
 import { computed, onBeforeUnmount, onMounted, readonly, shallowReadonly, shallowRef, watch } from 'vue'
 import { fetchText, modelResponses } from '../api'
+import { notification } from '../utils/notification'
 import { createOperationEpoch } from '../utils/operationEpoch'
 import { consumeModelResponse } from '../utils/responses'
 import {
@@ -160,7 +160,7 @@ export function useTextWorkbench(options: UseTextWorkbenchOptions) {
         || sourceKind.value !== 'url' || sourceUrl.value.trim() !== requestedUrl) {
         return
       }
-      ZNotification.error({ message: cause instanceof Error ? cause.message : '读取网页失败，请稍后重试' })
+      notification.error({ message: cause instanceof Error ? cause.message : '读取网页失败，请稍后重试' })
     }
     finally {
       if (taskEpoch.isCurrent(currentTask) && fetchEpoch.isCurrent(currentFetch))
@@ -226,7 +226,7 @@ export function useTextWorkbench(options: UseTextWorkbenchOptions) {
       }
       else {
         phase.value = 'error'
-        ZNotification.error({ message: cause instanceof Error ? cause.message : '生成失败，请重试' })
+        notification.error({ message: cause instanceof Error ? cause.message : '生成失败，请重试' })
       }
       await options.refreshSnapshot()
       if (!isCurrent())
