@@ -8,7 +8,7 @@ fn checked_in_manifest_is_the_complete_author_contract() {
     let manifest = manifest().unwrap();
     assert_eq!(manifest.plugin_id().unwrap(), PLUGIN_ID);
     assert_eq!(manifest.manifest_version, MANIFEST_VERSION);
-    assert_eq!(manifest.contributes[&Capability::Middleware].version, 5);
+    assert_eq!(manifest.contributes[&Capability::Middleware].version, 6);
     assert_eq!(manifest.contributes[&Capability::Scheduler].version, 3);
     assert_eq!(manifest.contributes.len(), 7);
     assert_eq!(
