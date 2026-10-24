@@ -14,7 +14,7 @@
   "runtime": "trustedProcess",
   "contributes": {
     "middleware": {
-      "version": 5,
+      "version": 6,
       "stages": [
         "request",
         "attempt"

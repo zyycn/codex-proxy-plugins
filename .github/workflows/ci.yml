@@ -45,6 +45,6 @@ jobs:
       - run: cargo test --manifest-path examples/workbench/backend/Cargo.toml --locked
       - run: bash -n scripts/package
       - name: Install pinned package tool
-        run: cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev 78bc57c5cf24b01a38e985cdd739bb4ae89ce11f codex-proxy-plugin-cli
+        run: cargo install --locked --git https://github.com/zyycn/codex-proxy-rs.git --rev 5afea450baa963f2e14ec73893a0827b5c9d85d7 codex-proxy-plugin-cli
       - name: Build installable package
         run: bash scripts/package x86_64-unknown-linux-gnu
