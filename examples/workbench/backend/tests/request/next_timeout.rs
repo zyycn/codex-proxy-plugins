@@ -1,6 +1,10 @@
 //! 用虚拟时钟验证 next 预算暂停，单独覆盖真实工作台子进程的交互
 
-use std::{collections::BTreeSet, process::Stdio, time::Duration};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    process::Stdio,
+    time::Duration,
+};
 
 use codex_proxy_plugin_workbench::{PLUGIN_ID, manifest, plugin};
 use gateway_plugin_sdk::client::{PluginSession, SessionConfig, read_frame, write_frame};
@@ -149,10 +153,18 @@ async fn verify_next<R: AsyncRead + Unpin, W: AsyncWrite + Unpin>(
         .unwrap();
     }
 
-    let mut callbacks = Vec::new();
+    let mut callbacks = BTreeMap::new();
     let mut waiting = BTreeSet::new();
-    for _ in cases {
+    let mut suspended = BTreeMap::new();
+    // 收齐挂起消息后再推进时钟，确保每个 next 都已进入暂停处理预算的等待
+    while callbacks.len() < cases.len() || suspended.len() < cases.len() {
         let frame = receive(reader).await;
+        if let Message::Suspend { id, epoch } = frame.message {
+            assert!(waiting.contains(&id));
+            assert_eq!(epoch, 1);
+            assert!(suspended.insert(id, epoch).is_none());
+            continue;
+        }
         let Message::Callback {
             id,
             parent_id,
@@ -174,23 +186,38 @@ async fn verify_next<R: AsyncRead + Unpin, W: AsyncWrite + Unpin>(
             assert_eq!(params["body"], "preserve");
             assert!(frame.payload.is_empty());
         }
-        callbacks.push((id, parent_id));
+        assert!(callbacks.insert(id, parent_id).is_none());
     }
 
     if advance_clock {
         // 会话与处理器处于同一暂停时钟，越过默认 120 秒期限而不消耗真实时间
         tokio::time::advance(Duration::from_secs(125)).await;
-        let unexpected = tokio::time::timeout(Duration::from_millis(1), read_frame(reader)).await;
-        assert!(
-            unexpected.is_err(),
-            "等待 next 时插件提前结束调用：{unexpected:?}"
-        );
+        // 旧计时器可唤醒已暂停的 future，授权它重新核对预算后应继续挂起
+        while let Ok(frame) =
+            tokio::time::timeout(Duration::from_millis(1), read_frame(reader)).await
+        {
+            let frame = frame.unwrap();
+            match frame.message {
+                Message::Resume { id, epoch } => {
+                    assert_eq!(suspended.remove(&id), Some(epoch));
+                    write_frame(writer, &Frame::control(Message::Resumed { id, epoch }))
+                        .await
+                        .unwrap();
+                }
+                Message::Suspend { id, epoch } => {
+                    assert!(waiting.contains(&id) && epoch > 1);
+                    assert!(suspended.insert(id, epoch).is_none());
+                }
+                _ => panic!("等待 next 时插件提前结束调用：{frame:?}"),
+            }
+        }
+        assert_eq!(suspended.len(), cases.len());
     }
-    for (id, parent_id) in callbacks {
+    for (id, parent_id) in &callbacks {
         write_frame(
             writer,
             &Frame::control(Message::Result {
-                id,
+                id: *id,
                 result: json!({
                     "response": format!("response-{parent_id}"),
                     "protocol": "openai", "status": 200, "headers": [],
@@ -203,9 +230,19 @@ async fn verify_next<R: AsyncRead + Unpin, W: AsyncWrite + Unpin>(
 
     let mut replied = BTreeSet::new();
     let mut ended = BTreeSet::new();
-    for _ in 0..cases.len() * 2 {
+    while ended.len() < cases.len() || !callbacks.is_empty() {
         let frame = receive(reader).await;
         match frame.message {
+            Message::Resume { id, epoch } => {
+                assert_eq!(suspended.remove(&id), Some(epoch));
+                write_frame(writer, &Frame::control(Message::Resumed { id, epoch }))
+                    .await
+                    .unwrap();
+            }
+            Message::CallbackConsumed { id, parent_id } => {
+                assert_eq!(callbacks.remove(&id), Some(parent_id));
+                assert!(!suspended.contains_key(&parent_id));
+            }
             Message::Result { id, .. } => {
                 assert!(waiting.contains(&id) && replied.insert(id));
                 assert_eq!(result(&frame)["response"], format!("response-{id}"));
@@ -223,6 +260,7 @@ async fn verify_next<R: AsyncRead + Unpin, W: AsyncWrite + Unpin>(
         }
     }
     assert_eq!(ended, waiting);
+    assert!(suspended.is_empty());
     write_frame(writer, &Frame::control(Message::Shutdown))
         .await
         .unwrap();

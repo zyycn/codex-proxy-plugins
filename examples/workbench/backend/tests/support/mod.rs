@@ -1,8 +1,11 @@
-use std::time::Duration;
+//! 通过公开 RPC 会话验证工作台处理器，模拟宿主回调与调度授权
+
+use std::{collections::BTreeMap, time::Duration};
 
 use codex_proxy_plugin_workbench::{PLUGIN_ID, manifest, plugin};
 use gateway_plugin_sdk::{
-    CallContext, Frame, Handshake, Message, PROTOCOL_VERSION, PluginFault, Stage,
+    CallContext, Frame, Handshake, Message, PROTOCOL_VERSION, PluginFault, ResolvedCallBudgets,
+    Stage,
     client::{PluginSession, SessionConfig, read_frame, write_frame},
 };
 use serde_json::{Value, json};
@@ -14,12 +17,15 @@ use tokio::{
 const PIPE_BUFFER_BYTES: usize = 1024 * 1024;
 pub type CallbackReply = Result<(Value, Vec<u8>), PluginFault>;
 
-// 从公开会话入口验证真实处理器；只替换宿主资源，不复制生产模块或扩大可见性。
+// 只替换宿主资源，不复制生产模块或扩大可见性
 pub struct Peer {
     reader: ReadHalf<DuplexStream>,
     writer: WriteHalf<DuplexStream>,
     task: JoinHandle<()>,
     next_id: u64,
+    budgets: ResolvedCallBudgets,
+    suspended: BTreeMap<u64, u64>,
+    callbacks: BTreeMap<u64, u64>,
 }
 
 impl Peer {
@@ -38,6 +44,9 @@ impl Peer {
             writer,
             task,
             next_id: 0,
+            budgets: ResolvedCallBudgets::resolve(&Default::default()).unwrap(),
+            suspended: BTreeMap::new(),
+            callbacks: BTreeMap::new(),
         };
         let manifest = manifest().unwrap();
         peer.send(Frame::control(Message::Hello {
@@ -53,10 +62,10 @@ impl Peer {
             },
         }))
         .await;
-        assert!(matches!(
-            peer.receive().await.message,
-            Message::Ready { .. }
-        ));
+        let Message::Ready { call_budgets, .. } = peer.receive().await.message else {
+            panic!("预期插件握手完成");
+        };
+        peer.budgets = ResolvedCallBudgets::resolve(&call_budgets).unwrap();
         peer
     }
 
@@ -94,7 +103,7 @@ impl Peer {
                     generation: 1,
                     incarnation: "test-session".to_owned(),
                     stage,
-                    timeout_ms: 10_000,
+                    timeout_ms: u64::try_from(self.budgets.budget(stage).as_millis()).unwrap(),
                     resource_stream: false,
                     resource_scope_id: "test-scope".to_owned(),
                     request_id: Some("test-request".to_owned()),
@@ -142,6 +151,8 @@ impl Peer {
                 }
                 Message::Result { id: reply_id, .. } | Message::Error { id: reply_id, .. } => {
                     assert_eq!(reply_id, id);
+                    assert!(self.callbacks.is_empty());
+                    assert!(!self.suspended.contains_key(&id));
                     return frame;
                 }
                 _ => panic!("出现未预期的插件消息：{frame:?}"),
@@ -206,10 +217,30 @@ impl Peer {
     }
 
     pub async fn receive(&mut self) -> Frame {
-        tokio::time::timeout(Duration::from_secs(10), read_frame(&mut self.reader))
-            .await
-            .expect("插件响应超时")
-            .unwrap()
+        loop {
+            let frame = tokio::time::timeout(Duration::from_secs(10), read_frame(&mut self.reader))
+                .await
+                .expect("插件响应超时")
+                .unwrap();
+            match frame.message {
+                Message::Suspend { id, epoch } => {
+                    assert!(epoch > 0 && self.suspended.insert(id, epoch).is_none());
+                }
+                Message::Resume { id, epoch } => {
+                    assert_eq!(self.suspended.remove(&id), Some(epoch));
+                    self.send(Frame::control(Message::Resumed { id, epoch }))
+                        .await;
+                }
+                Message::CallbackConsumed { id, parent_id } => {
+                    assert_eq!(self.callbacks.remove(&id), Some(parent_id));
+                }
+                Message::Callback { id, parent_id, .. } => {
+                    assert!(self.callbacks.insert(id, parent_id).is_none());
+                    return frame;
+                }
+                _ => return frame,
+            }
+        }
     }
 }
 
