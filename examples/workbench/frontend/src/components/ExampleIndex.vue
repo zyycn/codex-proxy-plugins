@@ -18,11 +18,11 @@ const options = computed(() => props.examples.map(item => ({
 </script>
 
 <template>
-  <nav class="min-w-0 bg-cp-bg-container p-4 lg:px-3 lg:py-5" aria-label="基础示例">
+  <nav class="min-w-0 bg-z-bg-container p-4 lg:px-3 lg:py-5" aria-label="基础示例">
     <ZSelect v-model="selectedId" :options="options" class="lg:hidden" aria-label="选择基础示例" />
     <div class="hidden gap-6 lg:grid">
       <section v-for="group in groups" :key="group.label" class="grid gap-2" :aria-label="group.label">
-        <h2 class="m-0 px-3 text-cp-xs font-normal text-cp-text-tertiary">
+        <h2 class="m-0 px-3 text-z-xs font-normal text-z-text-tertiary">
           {{ group.label }}
         </h2>
         <div class="grid gap-1">
@@ -30,8 +30,8 @@ const options = computed(() => props.examples.map(item => ({
             v-for="item in group.items"
             :key="item.id"
             type="button"
-            class="flex min-h-10 w-full cursor-pointer items-center gap-2.5 rounded-cp border-0 px-3 py-2 text-left text-cp-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cp-control-outline motion-reduce:transition-none"
-            :class="selectedId === item.id ? 'bg-cp-primary-container font-emphasis text-cp-primary-on-container' : 'bg-transparent text-cp-text-secondary hover:bg-cp-fill-tertiary hover:text-cp-text'"
+            class="flex min-h-10 w-full cursor-pointer items-center gap-2.5 rounded-z border-0 px-3 py-2 text-left text-z-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-z-control-outline motion-reduce:transition-none"
+            :class="selectedId === item.id ? 'bg-z-primary-container font-emphasis text-z-primary-on-container' : 'bg-transparent text-z-text-secondary hover:bg-z-fill-tertiary hover:text-z-text'"
             :aria-current="selectedId === item.id ? 'true' : undefined"
             @click="selectedId = item.id"
           >

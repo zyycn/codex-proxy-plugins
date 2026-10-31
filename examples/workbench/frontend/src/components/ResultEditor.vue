@@ -53,10 +53,10 @@ function continueWith(value: string) {
   <section class="flex min-h-0 min-w-0 flex-col p-4 sm:p-5" aria-labelledby="result-title">
     <div class="flex items-center justify-between gap-3">
       <div>
-        <h2 id="result-title" class="m-0 text-cp font-emphasis">
+        <h2 id="result-title" class="m-0 text-z font-emphasis">
           结果
         </h2>
-        <p class="mt-1 mb-0 flex items-center gap-1.5 text-cp-xs text-cp-text-tertiary" role="status">
+        <p class="mt-1 mb-0 flex items-center gap-1.5 text-z-xs text-z-text-tertiary" role="status">
           <LoaderCircle v-if="running" class="size-3 animate-spin motion-reduce:animate-none" />
           {{ statusLabel }}
         </p>
@@ -85,10 +85,10 @@ function continueWith(value: string) {
       <ZScrollbar v-else-if="result" class="h-full" aria-label="生成结果">
         <ZMarkdown :source="result" class="px-1 pr-4" />
       </ZScrollbar>
-      <div v-else class="flex h-full flex-col items-center justify-center gap-3 rounded-cp bg-cp-fill-quaternary text-cp-text-tertiary">
+      <div v-else class="flex h-full flex-col items-center justify-center gap-3 rounded-z bg-z-fill-quaternary text-z-text-tertiary">
         <CircleAlert v-if="phase === 'error'" class="size-7" aria-hidden="true" />
         <AlignLeft v-else class="size-7" :class="running ? 'animate-pulse motion-reduce:animate-none' : ''" aria-hidden="true" />
-        <span class="text-cp-sm">{{ loading ? '正在读取工作台' : running ? '正在生成…' : phase === 'error' ? '生成失败，可重新生成' : '填写原文，选择一种处理方式' }}</span>
+        <span class="text-z-sm">{{ loading ? '正在读取工作台' : running ? '正在生成…' : phase === 'error' ? '生成失败，可重新生成' : '填写原文，选择一种处理方式' }}</span>
       </div>
     </div>
 
@@ -108,7 +108,7 @@ function continueWith(value: string) {
     </div>
 
     <div class="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
-      <span class="text-cp-xs text-cp-text-tertiary">真实模型调用，按所选 Key 计费</span>
+      <span class="text-z-xs text-z-text-tertiary">真实模型调用，按所选 Key 计费</span>
       <ZButton v-if="running" @click="emit('stop')">
         <template #icon>
           <Square class="size-3.5" />

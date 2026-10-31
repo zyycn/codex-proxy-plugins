@@ -18,10 +18,10 @@ const runner = useExampleRunner(toRef(props, 'snapshot'), props.refresh)
 
 <template>
   <div class="flex min-w-0 flex-1 flex-col gap-3">
-    <p v-if="error" class="m-0 text-cp-sm text-cp-error-text" role="alert">
+    <p v-if="error" class="m-0 text-z-sm text-z-error-text" role="alert">
       {{ error }}
     </p>
-    <div class="grid min-w-0 flex-1 grid-rows-[auto_1fr] overflow-hidden rounded-cp-card bg-cp-bg-container lg:grid-cols-[12rem_minmax(0,1fr)] lg:grid-rows-1">
+    <div class="grid min-w-0 flex-1 grid-rows-[auto_1fr] overflow-hidden rounded-z-card bg-z-bg-container lg:grid-cols-[12rem_minmax(0,1fr)] lg:grid-rows-1">
       <ExampleIndex
         v-model="runner.selectedId.value"
         :examples="runner.examples.value"

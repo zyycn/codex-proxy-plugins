@@ -63,7 +63,7 @@ const noRealModels = computed(() => Boolean(
       />
 
       <div class="mt-4 grid gap-3 border-0 pt-0 md:grid-cols-[auto_minmax(12rem,1fr)] md:items-end">
-        <div class="grid gap-1.5 text-cp-xs font-emphasis text-cp-text-secondary">
+        <div class="grid gap-1.5 text-z-xs font-emphasis text-z-text-secondary">
           <span>文本任务</span>
           <ZSegmented
             v-model="workbench.task.value"
@@ -72,7 +72,7 @@ const noRealModels = computed(() => Boolean(
             :disabled="editingDisabled"
           />
         </div>
-        <div class="grid min-w-0 gap-1.5 text-cp-xs font-emphasis text-cp-text-secondary">
+        <div class="grid min-w-0 gap-1.5 text-z-xs font-emphasis text-z-text-secondary">
           <span>{{ instructionLabel }}</span>
           <ZInput
             v-model="workbench.instruction.value"
@@ -84,20 +84,20 @@ const noRealModels = computed(() => Boolean(
         </div>
       </div>
 
-      <p v-if="resourceError" class="mt-3 mb-0 flex items-start gap-2 text-cp-sm text-cp-error-text" role="alert">
+      <p v-if="resourceError" class="mt-3 mb-0 flex items-start gap-2 text-z-sm text-z-error-text" role="alert">
         <CircleAlert class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         {{ resourceError }}
       </p>
-      <p v-else-if="workbench.historyNotice.value" class="mt-3 mb-0 text-cp-xs text-cp-success-text" role="status">
+      <p v-else-if="workbench.historyNotice.value" class="mt-3 mb-0 text-z-xs text-z-success-text" role="status">
         {{ workbench.historyNotice.value }}
       </p>
       <p
         v-else-if="snapshot?.keysNextCursor"
-        class="mt-3 mb-0 text-cp-xs text-cp-text-tertiary"
+        class="mt-3 mb-0 text-z-xs text-z-text-tertiary"
       >
         Key 列表还有更多结果，本示例只展示首批候选
       </p>
-      <p v-else-if="noRealModels" class="mt-3 mb-0 text-cp-xs text-cp-text-tertiary">
+      <p v-else-if="noRealModels" class="mt-3 mb-0 text-z-xs text-z-text-tertiary">
         当前 Key 没有可用的真实模型，可以切换 Key 或先在账号管理中添加模型账号
       </p>
     </ZCard>
@@ -108,7 +108,7 @@ const noRealModels = computed(() => Boolean(
           v-model="workbench.source.value"
           v-model:kind="workbench.sourceKind.value"
           v-model:url="workbench.sourceUrl.value"
-          class="bg-cp-bg-container"
+          class="bg-z-bg-container"
           :disabled="editingDisabled"
           :fetching="workbench.fetchingText.value"
           :fetch-reply="workbench.fetchReply.value"
@@ -116,7 +116,7 @@ const noRealModels = computed(() => Boolean(
         />
         <ResultEditor
           v-model="workbench.result.value"
-          class="bg-cp-bg-container"
+          class="bg-z-bg-container"
           :phase="workbench.phase.value"
           :running="workbench.running.value"
           :loading="initializing"

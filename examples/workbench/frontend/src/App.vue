@@ -21,13 +21,13 @@ const { snapshot, loading, error, refresh } = useWorkbenchData()
 <template>
   <ZConfigProvider :locale="zhHans">
     <main
-      class="flex min-w-0 flex-col gap-4 font-sans text-cp-text"
-      :class="{ 'md:h-(--cp-plugin-viewport-height,100dvh)': view === 'images' }"
+      class="flex min-w-0 flex-col gap-4 font-sans text-z-text"
+      :class="{ 'md:h-(--plugin-viewport-height,100dvh)': view === 'images' }"
       :style="{ minHeight: view === 'images' ? undefined : preview ? '100dvh' : 'inherit' }"
     >
       <div
         v-if="preview"
-        class="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-cp bg-cp-warning-container px-3 py-2 text-cp-sm text-cp-warning-on-container"
+        class="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-z bg-z-warning-container px-3 py-2 text-z-sm text-z-warning-on-container"
         role="note"
       >
         <span class="inline-flex items-center gap-2">

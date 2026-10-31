@@ -33,10 +33,10 @@ const fetchSummary = computed(() => {
   <section class="flex min-h-0 min-w-0 flex-col p-4 sm:p-5" aria-labelledby="source-title">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h2 id="source-title" class="m-0 text-cp font-emphasis text-cp-text">
+        <h2 id="source-title" class="m-0 text-z font-emphasis text-z-text">
           原文
         </h2>
-        <p class="mt-1 mb-0 text-cp-xs text-cp-text-tertiary">
+        <p class="mt-1 mb-0 text-z-xs text-z-text-tertiary">
           {{ sourceCount }} 字符
         </p>
       </div>
@@ -59,7 +59,7 @@ const fetchSummary = computed(() => {
         </template>
         取文
       </ZButton>
-      <p v-if="fetchSummary" class="m-0 text-cp-xs text-cp-text-tertiary sm:col-span-2" role="status">
+      <p v-if="fetchSummary" class="m-0 text-z-xs text-z-text-tertiary sm:col-span-2" role="status">
         {{ fetchSummary }}
       </p>
     </div>
@@ -75,7 +75,7 @@ const fetchSummary = computed(() => {
       aria-label="待处理原文"
     />
     <div class="mt-3 flex items-center justify-between gap-2">
-      <span class="text-cp-xs text-cp-text-tertiary">保留原文，生成后可继续调整结果</span>
+      <span class="text-z-xs text-z-text-tertiary">保留原文，生成后可继续调整结果</span>
       <ZButton :class="{ invisible: Boolean(source) }" size="small" :disabled="disabled" @click="source = 'Our team released a text workbench. It can summarize, translate, and rewrite articles. Users can stop generation and save their results.'">
         填入示例
       </ZButton>

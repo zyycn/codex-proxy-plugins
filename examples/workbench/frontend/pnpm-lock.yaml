@@ -6,9 +6,6 @@ importers:
   .:
     configDependencies: {}
     packageManagerDependencies:
-      '@pnpm/exe':
-        specifier: 12.6.0
-        version: 12.6.0
       pnpm:
         specifier: 12.6.0
         version: 12.6.0
@@ -92,11 +89,6 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@pnpm/exe@12.6.0':
-    resolution: {integrity: sha512-CkNetlJZugjKp9vPvWqCm5ahORU6FfO46BlOqqSCKLJ+W6QcRgM0qmmPTvlgrXVvkAiH+9hE+mMp/wSaqcU5Aw==}
-    engines: {node: '>=18.*'}
-    hasBin: true
-
   pnpm@12.6.0:
     resolution: {integrity: sha512-PvaPlRyxEawgS0paFvCy3fDaVqluBBPoHYVdnwtV75JnFHCQKOHNAMQFwsX7e56OxNxGd3yAXQNzwvL/AP0g7A==}
     engines: {node: '>=18.*'}
@@ -146,23 +138,6 @@ snapshots:
   '@pnpm/exe.win32-x64@12.6.0':
     optional: true
 
-  '@pnpm/exe@12.6.0':
-    optionalDependencies:
-      '@pnpm/exe.android-arm64': 12.6.0
-      '@pnpm/exe.android-x64': 12.6.0
-      '@pnpm/exe.darwin-arm64': 12.6.0
-      '@pnpm/exe.darwin-x64': 12.6.0
-      '@pnpm/exe.freebsd-x64': 12.6.0
-      '@pnpm/exe.linux-arm64': 12.6.0
-      '@pnpm/exe.linux-arm64-musl': 12.6.0
-      '@pnpm/exe.linux-ppc64': 12.6.0
-      '@pnpm/exe.linux-riscv64': 12.6.0
-      '@pnpm/exe.linux-s390x': 12.6.0
-      '@pnpm/exe.linux-x64': 12.6.0
-      '@pnpm/exe.linux-x64-musl': 12.6.0
-      '@pnpm/exe.win32-arm64': 12.6.0
-      '@pnpm/exe.win32-x64': 12.6.0
-
   pnpm@12.6.0:
     optionalDependencies:
       '@pnpm/exe.android-arm64': 12.6.0
@@ -192,8 +167,8 @@ importers:
   .:
     dependencies:
       '@codex-proxy/ui':
-        specifier: github:zyycn/codex-proxy-ui#v0.7.0
-        version: https://codeload.github.com/zyycn/codex-proxy-ui/tar.gz/0692ca034be88de6faf88bc76f1a6e9e7ad65225(change-case@5.4.4)(vite@8.3.0(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1))(vue@3.5.43(typescript@6.0.3))
+        specifier: github:zyycn/codex-proxy-ui#v0.8.0
+        version: https://codeload.github.com/zyycn/codex-proxy-ui/tar.gz/d6100447010715c1203e67a4195fc6d875ff6249(change-case@5.4.4)(jiti@2.7.0)(postcss@8.5.28)(vite@8.3.0(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1))(vue@3.5.43(typescript@6.0.3))(yaml@2.9.1)
       '@lucide/vue':
         specifier: ^1.47.0
         version: 1.54.0(vue@3.5.43(typescript@6.0.3))
@@ -355,9 +330,9 @@ packages:
     resolution: {integrity: sha512-dlT1m5e/0yUL0kRNcQn7yGLVThkgbB0Ga/1AmfDDC/8ik6AIiSf2QLQO2zPYvefsHP0aFgxO93cVLCCfDp7kzQ==}
     engines: {node: '>= 20.12.0'}
 
-  '@codex-proxy/ui@https://codeload.github.com/zyycn/codex-proxy-ui/tar.gz/0692ca034be88de6faf88bc76f1a6e9e7ad65225':
-    resolution: {gitHosted: true, integrity: sha512-JJesyJ1Y/QcdXhBtmKX6k0GyUgOSxiV8sJrUymvLyKjC8NhHLmtpXWt/evZcjYBDyJEIRll85bmSmtMF9/Wpqw==, tarball: https://codeload.github.com/zyycn/codex-proxy-ui/tar.gz/0692ca034be88de6faf88bc76f1a6e9e7ad65225}
-    version: 0.7.0
+  '@codex-proxy/ui@https://codeload.github.com/zyycn/codex-proxy-ui/tar.gz/d6100447010715c1203e67a4195fc6d875ff6249':
+    resolution: {gitHosted: true, integrity: sha512-XNPErDXqq9OxvgLgSb0gVRGmI9Yf+Vx0dTjoZKzaAaCOX9exSirU5kEr9mJBeuo9E1DDw8817xV0B5Od9zH+5A==, tarball: https://codeload.github.com/zyycn/codex-proxy-ui/tar.gz/d6100447010715c1203e67a4195fc6d875ff6249}
+    version: 0.8.0
     engines: {node: '>=24'}
     peerDependencies:
       vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
@@ -1816,6 +1791,10 @@ packages:
     resolution: {integrity: sha512-WkUDrojuJs0xkgGf2udWxa3yGBRxPtxUkB79i6aCZLRgc7PM8fZe9TosfPDcvEpQZbuFASnHYmRLBLUbmLOIIA==}
     engines: {node: '>= 12.0.0'}
 
+  lilconfig@3.1.4:
+    resolution: {integrity: sha512-zJZyBmQhArDRefuWTypZxwDpFDIYmrj8ypSBvwGD5P13Y95s6DjzKgu4DVdGbeQa5PDEsAOCAPNk4X+QOR006w==}
+    engines: {node: '>=14'}
+
   local-pkg@1.2.1:
     resolution: {integrity: sha512-++gUqRDEvcnN6Zhqrr+y/CkVEHhlrR96vZn3nZZPYzMcBUyBtTKzB9NadClFIsIVSsu+3i9tfk/erqy9kAmt7Q==}
     engines: {node: '>=14'}
@@ -1836,6 +1815,11 @@ packages:
 
   markdown-table@3.0.4:
     resolution: {integrity: sha512-wiYz4+JrLyb/DqW2hkFJxP7Vd7JuTDm77fvbM8VfEQdmSMqcImWeeRbHwZjBjIFki/VaMK2BhFi7oUUZeM5bqw==}
+
+  marked-alert@2.1.2:
+    resolution: {integrity: sha512-EFNRZ08d8L/iEIPLTlQMDjvwIsj03gxWCczYTht6DCiHJIZhMk4NK5gtPY9UqAYb09eV5VGT+jD4lp396E0I+w==}
+    peerDependencies:
+      marked: '>=7.0.0'
 
   marked@18.1.0:
     resolution: {integrity: sha512-PamYXWWWg2nboG3oX5Ffzpy3EFZROqZJK9hSlMmUnekp7TxPs5DcT95vwd46m73/exfKCRVMtgXoPMI4FEJL6w==}
@@ -2086,6 +2070,24 @@ packages:
 
   pnpm-workspace-yaml@1.9.1:
     resolution: {integrity: sha512-Xj/T2X6DNAWbtk/9UQ0/TJRswltiHZevmcMjqoL7WrpJi67lu3qaslU4+I+zJ8wtwqmuvAE0KkB8rbv2ZdogBg==}
+
+  postcss-load-config@6.0.1:
+    resolution: {integrity: sha512-oPtTM4oerL+UXmx+93ytZVN82RrlY/wPUV8IeDxFrzIjXOLF1pN+EmKPLbubvKHT2HC20xXsCAH2Z+CKV6Oz/g==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      jiti: '>=1.21.0'
+      postcss: '>=8.0.9'
+      tsx: ^4.8.1
+      yaml: ^2.4.2
+    peerDependenciesMeta:
+      jiti:
+        optional: true
+      postcss:
+        optional: true
+      tsx:
+        optional: true
+      yaml:
+        optional: true
 
   postcss-selector-parser@7.1.6:
     resolution: {integrity: sha512-7qASPzhKF2l2KLboRZux8CCTRMdGiV08vWmyKzPz22qZ7ZjQBOeY7rNzNoCLSUiftJ7HUq0GERHmxw/t0dCdMw==}
@@ -2489,7 +2491,7 @@ snapshots:
       fast-wrap-ansi: 0.2.2
       sisteransi: 1.0.5
 
-  '@codex-proxy/ui@https://codeload.github.com/zyycn/codex-proxy-ui/tar.gz/0692ca034be88de6faf88bc76f1a6e9e7ad65225(change-case@5.4.4)(vite@8.3.0(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1))(vue@3.5.43(typescript@6.0.3))':
+  '@codex-proxy/ui@https://codeload.github.com/zyycn/codex-proxy-ui/tar.gz/d6100447010715c1203e67a4195fc6d875ff6249(change-case@5.4.4)(jiti@2.7.0)(postcss@8.5.28)(vite@8.3.0(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1))(vue@3.5.43(typescript@6.0.3))(yaml@2.9.1)':
     dependencies:
       '@ant-design/colors': 8.0.1
       '@ant-design/fast-color': 3.0.1
@@ -2502,6 +2504,8 @@ snapshots:
       es-toolkit: 1.52.0
       gsap: 3.15.0
       marked: 18.1.0
+      marked-alert: 2.1.2(marked@18.1.0)
+      postcss-load-config: 6.0.1(jiti@2.7.0)(postcss@8.5.28)(yaml@2.9.1)
       sortablejs: 1.15.7
       vue: 3.5.43(typescript@6.0.3)
     optionalDependencies:
@@ -2514,10 +2518,14 @@ snapshots:
       - focus-trap
       - fuse.js
       - idb-keyval
+      - jiti
       - jwt-decode
       - nprogress
+      - postcss
       - qrcode
+      - tsx
       - universal-cookie
+      - yaml
 
   '@dprint/formatter@0.5.1': {}
 
@@ -3797,6 +3805,8 @@ snapshots:
       lightningcss-win32-arm64-msvc: 1.33.0
       lightningcss-win32-x64-msvc: 1.33.0
 
+  lilconfig@3.1.4: {}
+
   local-pkg@1.2.1:
     dependencies:
       mlly: 1.8.2
@@ -3820,6 +3830,10 @@ snapshots:
       web-worker: 1.5.0
 
   markdown-table@3.0.4: {}
+
+  marked-alert@2.1.2(marked@18.1.0):
+    dependencies:
+      marked: 18.1.0
 
   marked@18.1.0: {}
 
@@ -4276,6 +4290,14 @@ snapshots:
 
   pnpm-workspace-yaml@1.9.1:
     dependencies:
+      yaml: 2.9.1
+
+  postcss-load-config@6.0.1(jiti@2.7.0)(postcss@8.5.28)(yaml@2.9.1):
+    dependencies:
+      lilconfig: 3.1.4
+    optionalDependencies:
+      jiti: 2.7.0
+      postcss: 8.5.28
       yaml: 2.9.1
 
   postcss-selector-parser@7.1.6:

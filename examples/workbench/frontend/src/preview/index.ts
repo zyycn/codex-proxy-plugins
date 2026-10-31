@@ -1,10 +1,8 @@
 // @env browser
 import type { Evidence, PluginHost, SavedTasks, WorkbenchExample } from '../api'
 import {
-  applyResolvedTheme,
-  DEFAULT_CUSTOM_THEME_COLOR,
-  DEFAULT_THEME_COLOR,
-  resolveTheme,
+  applyTheme,
+  createTheme,
 } from '@codex-proxy/ui/theme'
 
 import { exampleDefinitions } from './data'
@@ -247,9 +245,9 @@ export function installPreviewHost(): boolean {
 
   const parameters = new URLSearchParams(window.location.search)
   const theme = parameters.get('theme') === 'dark' ? 'dark' : 'light'
-  applyResolvedTheme(
+  applyTheme(
     document.documentElement,
-    resolveTheme(theme, DEFAULT_THEME_COLOR, DEFAULT_CUSTOM_THEME_COLOR),
+    createTheme({ scheme: theme }),
   )
 
   const value: PluginHost = {

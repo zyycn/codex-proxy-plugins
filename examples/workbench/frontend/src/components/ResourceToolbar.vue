@@ -24,7 +24,7 @@ const historyId = defineModel<string>('historyId', { required: true })
 
 <template>
   <div class="grid min-w-0 gap-3 md:grid-cols-[minmax(10rem,0.8fr)_minmax(11rem,1fr)_minmax(11rem,1fr)_auto]">
-    <div class="grid min-w-0 gap-1.5 text-cp-xs font-emphasis text-cp-text-secondary">
+    <div class="grid min-w-0 gap-1.5 text-z-xs font-emphasis text-z-text-secondary">
       <span>客户端 Key</span>
       <ZSelect
         v-model="clientKeyId"
@@ -35,7 +35,7 @@ const historyId = defineModel<string>('historyId', { required: true })
         aria-label="客户端 Key"
       />
     </div>
-    <div class="grid min-w-0 gap-1.5 text-cp-xs font-emphasis text-cp-text-secondary">
+    <div class="grid min-w-0 gap-1.5 text-z-xs font-emphasis text-z-text-secondary">
       <span>模型</span>
       <ZSelect
         v-model="modelId"
@@ -46,7 +46,7 @@ const historyId = defineModel<string>('historyId', { required: true })
         aria-label="模型"
       />
     </div>
-    <div class="grid min-w-0 gap-1.5 text-cp-xs font-emphasis text-cp-text-secondary">
+    <div class="grid min-w-0 gap-1.5 text-z-xs font-emphasis text-z-text-secondary">
       <span>历史记录</span>
       <ZSelect
         v-model="historyId"
